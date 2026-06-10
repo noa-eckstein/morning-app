@@ -163,6 +163,9 @@ body{
 }
 .slot-filled .slot-name{font-size:9px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .slot.pop{animation:popIn .4s ease}
+.slot.just-drafted{animation:draftGlow 1.5s ease infinite}
+.slot.just-drafted .slot-photo,.slot.just-drafted .slot-photo-placeholder{box-shadow:0 0 16px 4px var(--gold)}
+@keyframes draftGlow{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 
 .bottom-nav{
   display:flex;background:#fff;border-top:1px solid #E0E0E0;flex-shrink:0;
@@ -679,9 +682,11 @@ function renderTeamView(){
     save();
   }
 
+  const hl=S._highlightPos||null;
+  S._highlightPos=null;
   let html=`<div class="team-header">⚽ הנבחרת של ${info.name}</div>`;
   html+=`<div class="team-count">${team.length}/11 שחקנים</div>`;
-  html+=renderPitch(kid);
+  html+=renderPitch(kid,hl);
 
   if(isComplete||isFri&&team.length>=11){
     html+=`<button class="match-btn" id="start-match">⚽ שחק משחק ידידות!</button>`;
@@ -707,7 +712,7 @@ function renderTeamView(){
   return html;
 }
 
-function renderPitch(kid){
+function renderPitch(kid,highlightPos){
   const team=S[kid].team;
   const byPos={};
   team.forEach(t=>{byPos[t.pos]=getPlayerById(t.playerId)});
@@ -717,7 +722,8 @@ function renderPitch(kid){
     const p=byPos[pos];
     if(p){
       const ph=PLAYER_PHOTOS[p.id];
-      slots+=`<div class="slot pop" style="left:${coord.l}%;top:${coord.t}%">
+      const hl=pos===highlightPos?' just-drafted':'';
+      slots+=`<div class="slot pop${hl}" style="left:${coord.l}%;top:${coord.t}%">
         <div class="slot-filled">
           ${ph?`<img class="slot-photo" src="${ph}" alt="${p.name}" style="border-color:${rarityColor(p.rarity)}">`:`<div class="slot-photo-placeholder" style="border-color:${rarityColor(p.rarity)}">${p.num}</div>`}
           <div class="slot-name">${p.name}</div>
@@ -816,9 +822,16 @@ function showDraft(milestone){
 
       setTimeout(()=>{
         overlay.remove();
+        S._highlightPos=pos;
+        S.view='team';
         render();
+        document.querySelectorAll('.slot.just-drafted').forEach(el=>el.scrollIntoView({behavior:'smooth',block:'center'}));
         const next=getNextMilestone(kid);
-        if(next)setTimeout(()=>showDraft(next),600);
+        if(next){
+          setTimeout(()=>{S.view='tasks';render();setTimeout(()=>showDraft(next),400)},2000);
+        }else{
+          setTimeout(()=>{S.view='tasks';render()},3000);
+        }
       },2800);
     });
   });
