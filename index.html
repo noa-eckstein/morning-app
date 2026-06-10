@@ -526,17 +526,19 @@ function getTasks(kid){
 }
 
 function doneCount(kid){return getTasks(kid).filter(t=>S[kid].tasks[t.id]).length}
+function nonBonusDone(kid){return getTasks(kid).filter(t=>!t.bonus&&S[kid].tasks[t.id]).length}
+function nonBonusTotal(kid){return getTasks(kid).filter(t=>!t.bonus).length}
 
 function getMilestones(kid){
   const draft=DAILY_DRAFT[dow()];
   if(!draft)return[];
-  const total=getTasks(kid).length;
+  const total=nonBonusTotal(kid);
   return draft.map((slot,i)=>({...slot,threshold:Math.ceil(total*(i+1)/draft.length),index:i}));
 }
 
 function getNextMilestone(kid){
   const ms=getMilestones(kid);
-  const done=doneCount(kid);
+  const done=nonBonusDone(kid);
   return ms.find(m=>done>=m.threshold&&!S[kid].claimed.includes(m.index));
 }
 
@@ -802,8 +804,9 @@ function showDraft(milestone){
   overlay.className='overlay';
   overlay.id='draft-overlay';
 
+  const isSwap=milestone.index<0;
   let cardsHtml=options.map((p,i)=>`
-    <div class="draft-card" data-pick="${p.id}" data-pos="${milestone.pos}" data-idx="${milestone.index}">
+    <div class="draft-card ${isSwap?'flipped':''}" data-pick="${p.id}" data-pos="${milestone.pos}" data-idx="${milestone.index}">
       <div class="draft-card-inner">
         <div class="draft-card-face card-back card-back-${i}">
           <span>⚽</span>
@@ -816,8 +819,8 @@ function showDraft(milestone){
   `).join('');
 
   overlay.innerHTML=`
-    <div class="draft-title">${milestone.index<0?'🔄':'🎉'} בחר ${milestone.label}!</div>
-    <div class="draft-subtitle">לחץ על קלף</div>
+    <div class="draft-title">${isSwap?'🔄':'🎉'} בחר ${milestone.label}!</div>
+    <div class="draft-subtitle">${isSwap?'בחר שחקן':'לחץ על קלף'}</div>
     <div class="draft-cards">${cardsHtml}</div>
   `;
 
@@ -825,7 +828,8 @@ function showDraft(milestone){
 
   overlay.querySelectorAll('.draft-card').forEach(card=>{
     card.addEventListener('click',function(){
-      if(this.classList.contains('flipped'))return;
+      if(this.dataset.picked)return;
+      this.dataset.picked='1';
       const pid=this.dataset.pick;
       const pos=this.dataset.pos;
       const idx=parseInt(this.dataset.idx);
@@ -1085,7 +1089,8 @@ function bindEvents(){
 
       document.querySelectorAll('.milestone').forEach((m,i)=>{
         const ms=getMilestones(kid);
-        if(ms[i]&&done>=ms[i].threshold)m.classList.add('reached');
+        const nb=nonBonusDone(kid);
+        if(ms[i]&&nb>=ms[i].threshold)m.classList.add('reached');
       });
 
       setTimeout(()=>{
