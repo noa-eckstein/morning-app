@@ -588,9 +588,6 @@ function renderKidColumn(kid){
 
   let html=`<div class="kid-column">
     <div class="col-header">
-      <div class="col-avatar" style="${!S[kid].photo?'background:'+info.color:''}">
-        ${S[kid].photo?`<img src="${S[kid].photo}">`:`<span>${info.initials}</span>`}
-      </div>
       <div class="col-name">${info.name}</div>
     </div>
     <div class="col-progress">
