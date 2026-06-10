@@ -61,6 +61,8 @@ body{
   text-align:center;padding:14px 16px 6px;font-size:20px;font-weight:700;color:var(--pitch);
 }
 .day-label{text-align:center;font-size:13px;color:var(--text2);padding-bottom:8px}
+.reset-btn{font-size:14px;color:var(--text3);cursor:pointer;margin-right:4px;opacity:.5;transition:.2s}
+.reset-btn:active{opacity:1;transform:scale(1.2)}
 .progress-wrap{padding:0 20px 10px}
 .progress-bar{
   height:28px;background:#E0E0E0;border-radius:14px;position:relative;overflow:visible;
@@ -635,13 +637,13 @@ function renderTasksView(){
 
   // Tablet: dual columns
   let html=`<div class="dual-tasks">`;
-  html+=`<div class="dual-day-label">יום ${DAY_NAMES[dow()]}</div>`;
+  html+=`<div class="dual-day-label">יום ${DAY_NAMES[dow()]} <span class="reset-btn" data-action="reset-day">↩</span></div>`;
   Object.keys(KIDS).forEach(k=>{html+=renderKidColumn(k)});
   html+=`</div>`;
 
   // Mobile: single kid view
   html+=`<div class="single-tasks">`;
-  html+=`<div class="day-label" style="padding-top:10px">יום ${DAY_NAMES[dow()]}</div>`;
+  html+=`<div class="day-label" style="padding-top:10px">יום ${DAY_NAMES[dow()]} <span class="reset-btn" data-action="reset-day">↩</span></div>`;
 
   html+=`<div class="progress-wrap">
     <div class="progress-bar">
@@ -1112,6 +1114,15 @@ function bindEvents(){
   document.querySelectorAll('[data-view]').forEach(el=>{
     el.addEventListener('click',()=>{
       S.view=el.dataset.view;
+      save();
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-action="reset-day"]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(!confirm('להתחיל את היום מחדש?'))return;
+      ['yehonatan','yoav'].forEach(k=>{S[k].tasks={};S[k].claimed=[];S[k].swaps=0});
       save();
       render();
     });
