@@ -61,7 +61,7 @@ body{
   text-align:center;padding:14px 16px 6px;font-size:20px;font-weight:700;color:var(--pitch);
 }
 .day-label{text-align:center;font-size:13px;color:var(--text2);padding-bottom:8px}
-.reset-btn{font-size:14px;color:var(--text3);cursor:pointer;margin-right:4px;opacity:.5;transition:.2s}
+.reset-btn{font-size:18px;color:var(--text2);cursor:pointer;margin-right:6px;opacity:.7;transition:.2s;padding:4px 8px}
 .reset-btn:active{opacity:1;transform:scale(1.2)}
 .progress-wrap{padding:0 20px 10px}
 .progress-bar{
@@ -1051,9 +1051,16 @@ function bindEvents(){
     el.addEventListener('click',()=>{
       const tid=el.dataset.task;
       const kid=S.currentKid;
-      if(S[kid].tasks[tid])return;
-      S[kid].tasks[tid]=true;
       const isBonus=COMMON_TASKS.find(t=>t.id===tid&&t.bonus);
+
+      // Toggle off
+      if(S[kid].tasks[tid]){
+        delete S[kid].tasks[tid];
+        if(isBonus){S[kid].swaps=Math.max(0,(S[kid].swaps||0)-2)}
+        save();render();return;
+      }
+
+      S[kid].tasks[tid]=true;
       if(isBonus){S[kid].swaps=(S[kid].swaps||0)+2}
       save();
 
@@ -1091,9 +1098,17 @@ function bindEvents(){
     el.addEventListener('click',()=>{
       const kid=el.dataset.kid;
       const tid=el.dataset.colTask;
-      if(S[kid].tasks[tid])return;
-      S[kid].tasks[tid]=true;
       const isBonus=COMMON_TASKS.find(t=>t.id===tid&&t.bonus);
+
+      // Toggle off
+      if(S[kid].tasks[tid]){
+        delete S[kid].tasks[tid];
+        if(isBonus){S[kid].swaps=Math.max(0,(S[kid].swaps||0)-2)}
+        S.currentKid=kid;
+        save();render();return;
+      }
+
+      S[kid].tasks[tid]=true;
       if(isBonus){S[kid].swaps=(S[kid].swaps||0)+2}
       S.currentKid=kid;
       save();
