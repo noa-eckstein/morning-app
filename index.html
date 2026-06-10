@@ -28,19 +28,35 @@ body{
 #app{height:100%;display:flex;flex-direction:column;max-width:500px;margin:0 auto;overflow:hidden}
 .header{
   background:linear-gradient(135deg,#1B5E20,#2E7D32);
-  padding:12px 16px 14px;display:flex;align-items:center;gap:12px;
+  padding:10px 16px 8px;display:flex;align-items:center;justify-content:center;gap:16px;
   box-shadow:0 2px 8px rgba(0,0,0,.2);position:relative;z-index:10;flex-shrink:0;
 }
-.header-title{color:#fff;font-size:18px;font-weight:700;flex:1;text-align:center}
 .kid-btn{
-  width:48px;height:48px;border-radius:50%;border:3px solid rgba(255,255,255,.3);
-  background:#455A64;display:flex;align-items:center;justify-content:center;
-  font-size:16px;font-weight:700;color:#fff;cursor:pointer;transition:.2s;
-  overflow:hidden;position:relative;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  cursor:pointer;transition:.25s;flex-shrink:0;
 }
-.kid-btn.active{border-color:var(--gold);box-shadow:0 0 12px rgba(255,179,0,.5);transform:scale(1.1)}
-.kid-btn img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.kid-btn .initials{font-size:15px}
+.kid-btn .kid-avatar{
+  width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.3);
+  background:#455A64;display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:#fff;overflow:hidden;transition:.25s;
+}
+.kid-btn.active .kid-avatar{
+  width:60px;height:60px;border:3px solid var(--gold);
+  box-shadow:0 0 14px rgba(255,179,0,.5);font-size:18px;
+}
+.kid-btn .kid-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.kid-btn .kid-label{
+  font-size:10px;color:rgba(255,255,255,.5);font-weight:600;transition:.2s;
+}
+.kid-btn.active .kid-label{font-size:13px;color:#fff}
+.kid-btn .photo-badge{
+  position:absolute;bottom:0;right:0;width:16px;height:16px;
+  background:var(--gold);border-radius:50%;font-size:8px;
+  display:none;align-items:center;justify-content:center;
+  border:2px solid #1B5E20;
+}
+.kid-btn.active .photo-badge{display:flex}
+.kid-btn .kid-avatar-wrap{position:relative}
 .greeting{
   text-align:center;padding:14px 16px 6px;font-size:20px;font-weight:700;color:var(--pitch);
 }
@@ -167,9 +183,9 @@ body{
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .draft-title{color:#fff;font-size:24px;font-weight:800;margin-bottom:24px;text-align:center}
 .draft-subtitle{color:rgba(255,255,255,.7);font-size:14px;margin-top:-16px;margin-bottom:20px}
-.draft-cards{display:flex;gap:16px;direction:ltr}
+.draft-cards{display:flex;gap:10px;direction:ltr;padding:0 12px}
 .draft-card{
-  width:120px;height:170px;perspective:1000px;cursor:pointer;
+  width:110px;height:160px;perspective:1000px;cursor:pointer;flex-shrink:0;
 }
 .draft-card-inner{
   width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d;position:relative;
@@ -268,12 +284,6 @@ body{
   font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;
 }
 
-.photo-hint{
-  position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;
-  background:var(--gold);border-radius:50%;font-size:10px;
-  display:flex;align-items:center;justify-content:center;
-  border:2px solid #1B5E20;
-}
 
 .all-done-banner{
   text-align:center;padding:16px;margin:8px 14px;
@@ -285,35 +295,6 @@ body{
 
 .empty-msg{text-align:center;padding:32px 16px;color:var(--text3);font-size:14px}
 
-.welcome{
-  height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:32px 24px;text-align:center;
-}
-.welcome-icon{font-size:64px;margin-bottom:12px}
-.welcome-title{font-size:24px;font-weight:800;color:var(--pitch);margin-bottom:6px}
-.welcome-sub{font-size:15px;color:var(--text2);margin-bottom:28px;line-height:1.5}
-.welcome-kids{display:flex;gap:24px;margin-bottom:28px}
-.welcome-kid{text-align:center;cursor:pointer}
-.welcome-kid-circle{
-  width:90px;height:90px;border-radius:50%;border:4px dashed #BDBDBD;
-  display:flex;align-items:center;justify-content:center;
-  font-size:32px;color:#BDBDBD;transition:.3s;overflow:hidden;margin:0 auto 8px;
-}
-.welcome-kid-circle.has-photo{border:4px solid var(--pitch)}
-.welcome-kid-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.welcome-kid-name{font-size:15px;font-weight:700;color:var(--text)}
-.welcome-start{
-  padding:14px 48px;border:none;border-radius:14px;font-size:18px;font-weight:700;
-  cursor:pointer;font-family:inherit;color:#fff;
-  background:linear-gradient(135deg,#1B5E20,#2E7D32);
-  box-shadow:0 4px 15px rgba(27,94,32,.3);transition:.2s;
-}
-.welcome-start:active{transform:scale(.95)}
-.welcome-start:disabled{opacity:.4;pointer-events:none}
-.welcome-skip{
-  margin-top:12px;background:none;border:none;color:var(--text3);
-  font-size:13px;cursor:pointer;font-family:inherit;text-decoration:underline;
-}
 
 .history-section{padding:16px}
 .history-title{font-size:15px;font-weight:700;color:var(--text2);margin-bottom:8px}
@@ -321,6 +302,65 @@ body{
   background:var(--card);border-radius:10px;padding:10px 14px;margin-bottom:6px;
   box-shadow:0 1px 4px rgba(0,0,0,.08);font-size:13px;color:var(--text2);
   display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+}
+
+/* Tablet: side-by-side task columns */
+.dual-tasks{display:flex;gap:12px;padding:0 14px}
+.kid-column{
+  flex:1;min-width:0;background:var(--card);border-radius:var(--radius);
+  padding:12px;box-shadow:var(--shadow);
+}
+.kid-column .col-header{
+  display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:8px;
+  border-bottom:2px solid #E8F5E9;
+}
+.kid-column .col-avatar{
+  width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:#fff;
+}
+.kid-column .col-avatar img{width:100%;height:100%;object-fit:cover}
+.kid-column .col-name{font-size:16px;font-weight:700;color:var(--pitch)}
+.kid-column .col-progress{
+  height:20px;background:#E0E0E0;border-radius:10px;position:relative;
+  overflow:visible;display:flex;align-items:center;margin-bottom:8px;
+}
+.kid-column .col-progress-fill{
+  height:100%;background:linear-gradient(90deg,var(--pitch),var(--pitch-light));
+  border-radius:10px;transition:width .4s;
+}
+.kid-column .col-progress-text{
+  position:absolute;width:100%;text-align:center;font-size:10px;font-weight:700;
+  color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3);direction:ltr;
+}
+.kid-column .col-task{
+  display:flex;align-items:center;gap:8px;padding:8px;margin:4px 0;
+  border-radius:10px;cursor:pointer;transition:.2s;
+}
+.kid-column .col-task:active{transform:scale(.97)}
+.kid-column .col-task.done{background:#E8F5E9}
+.kid-column .col-task.done .col-task-name{text-decoration:line-through;color:var(--text3)}
+.kid-column .col-task-icon{font-size:22px;flex-shrink:0}
+.kid-column .col-task-name{font-size:14px;font-weight:600;flex:1}
+.kid-column .col-task-check{
+  width:24px;height:24px;border-radius:50%;border:2px solid #BDBDBD;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-size:14px;transition:.3s;
+}
+.kid-column .col-task.done .col-task-check{background:var(--pitch);border-color:var(--pitch);color:#fff}
+.kid-column .col-task.special{border:1px solid var(--gold);background:#FFF8E1}
+.kid-column .col-task.special.done{background:#E8F5E9;border-color:var(--pitch-light)}
+.kid-column .col-done-trophy{text-align:center;padding:8px;font-size:48px}
+
+@media(min-width:700px){
+  #app{max-width:900px}
+  .header{gap:32px}
+  .kid-btn.active .kid-avatar{width:70px;height:70px}
+  .single-tasks{display:none}
+  .dual-tasks{display:flex}
+}
+@media(max-width:699px){
+  .dual-tasks{display:none}
 }
 </style>
 </head>
@@ -420,7 +460,7 @@ function load(){
     S=r?JSON.parse(r):null;
   }catch(e){S=null}
   if(!S)S={};
-  S=Object.assign({currentKid:'yehonatan',view:'tasks',lastDate:null,weekStart:null,welcomeDone:false},S);
+  S=Object.assign({currentKid:'yehonatan',view:'tasks',lastDate:null,weekStart:null},S);
   ['yehonatan','yoav'].forEach(k=>{
     S[k]=Object.assign({photo:null,tasks:{},team:[],claimed:[],history:[]},S[k]||{});
   });
@@ -499,11 +539,8 @@ function autoFillTeam(kid){
   });
 }
 
-function needsWelcome(){return !S.welcomeDone}
-
 function render(){
   const app=document.getElementById('app');
-  if(needsWelcome()){app.innerHTML=renderWelcome();bindWelcomeEvents();return}
   if(S.view==='match'){app.innerHTML=renderMatchView();bindEvents();return}
   app.innerHTML=renderHeader()+`<div class="main-scroll" id="main">${
     S.view==='tasks'?renderTasksView():renderTeamView()
@@ -511,45 +548,12 @@ function render(){
   bindEvents();
 }
 
-function renderWelcome(){
-  const kids=Object.entries(KIDS);
-  const allPhotos=kids.every(([k])=>S[k].photo);
-  return `<div class="welcome">
-    <div class="welcome-icon">⚽</div>
-    <div class="welcome-title">בוקר של אלופים!</div>
-    <div class="welcome-sub">בואו נוסיף תמונות של הילדים<br>כדי שיהיה אפשר להחליף ביניהם</div>
-    <div class="welcome-kids">
-      ${kids.map(([k,info])=>`<div class="welcome-kid" data-welcome-kid="${k}">
-        <div class="welcome-kid-circle ${S[k].photo?'has-photo':''}">
-          ${S[k].photo?`<img src="${S[k].photo}">`:'📷'}
-        </div>
-        <div class="welcome-kid-name">${info.name}</div>
-      </div>`).join('')}
-    </div>
-    <button class="welcome-start" id="welcome-go" ${allPhotos?'':'disabled'}>יאללה, מתחילים! 🏆</button>
-    <button class="welcome-skip" id="welcome-skip">אחר כך</button>
-  </div>`;
-}
-
-function bindWelcomeEvents(){
-  document.querySelectorAll('[data-welcome-kid]').forEach(el=>{
-    el.addEventListener('click',()=>{
-      photoInputTarget=el.dataset.welcomeKid;
-      document.getElementById('photo-input').click();
-    });
-  });
-  const goBtn=document.getElementById('welcome-go');
-  if(goBtn)goBtn.addEventListener('click',()=>{S.welcomeDone=true;save();render()});
-  const skipBtn=document.getElementById('welcome-skip');
-  if(skipBtn)skipBtn.addEventListener('click',()=>{S.welcomeDone=true;save();render()});
-}
-
 function renderHeader(){
-  const k=S.currentKid;
+  const kids=Object.keys(KIDS);
+  // Active kid in the center
+  const sorted=[...kids].sort((a,b)=>a===S.currentKid?-1:b===S.currentKid?1:0);
   return `<div class="header">
-    ${renderKidBtn('yoav')}
-    <div class="header-title">⚽ \u{1F3C6} בוקר של אלופים</div>
-    ${renderKidBtn('yehonatan')}
+    ${sorted.map(k=>renderKidBtn(k)).join('')}
   </div>`;
 }
 
@@ -558,9 +562,51 @@ function renderKidBtn(kid){
   const active=S.currentKid===kid?'active':'';
   const photo=S[kid].photo;
   return `<div class="kid-btn ${active}" data-switch="${kid}">
-    ${photo?`<img src="${photo}" alt="${info.name}">`:`<span class="initials" style="background:${info.color}">${info.initials}</span>`}
-    <div class="photo-hint">\u{1F4F7}</div>
+    <div class="kid-avatar-wrap">
+      <div class="kid-avatar" style="${!photo?'background:'+info.color:''}">
+        ${photo?`<img src="${photo}" alt="${info.name}">`:`<span>${info.initials}</span>`}
+      </div>
+      <div class="photo-badge">📷</div>
+    </div>
+    <div class="kid-label">${info.name}</div>
   </div>`;
+}
+
+function renderKidColumn(kid){
+  const info=KIDS[kid];
+  const tasks=getTasks(kid);
+  const done=doneCount(kid);
+  const total=tasks.length;
+  const allDone=done===total;
+  const pct=total?Math.round(done/total*100):0;
+
+  let html=`<div class="kid-column">
+    <div class="col-header">
+      <div class="col-avatar" style="${!S[kid].photo?'background:'+info.color:''}">
+        ${S[kid].photo?`<img src="${S[kid].photo}">`:`<span>${info.initials}</span>`}
+      </div>
+      <div class="col-name">${info.name}</div>
+    </div>
+    <div class="col-progress">
+      <div class="col-progress-fill" style="width:${pct}%"></div>
+      <div class="col-progress-text">${done} / ${total}</div>
+    </div>`;
+
+  if(allDone&&isSchoolDay()){
+    html+=`<div class="col-done-trophy">\u{1F3C6}</div>`;
+  }
+
+  html+=tasks.map(t=>{
+    const isDone=S[kid].tasks[t.id];
+    return `<div class="col-task ${isDone?'done':''} ${t.special?'special':''}" data-kid="${kid}" data-col-task="${t.id}">
+      <div class="col-task-icon">${t.icon}</div>
+      <div class="col-task-name">${t.name}</div>
+      <div class="col-task-check">${isDone?'✓':''}</div>
+    </div>`;
+  }).join('');
+
+  html+=`</div>`;
+  return html;
 }
 
 function renderTasksView(){
@@ -573,8 +619,14 @@ function renderTasksView(){
   const ms=getMilestones(kid);
   const pct=total?Math.round(done/total*100):0;
 
-  let html=`<div class="greeting">☀️ בוקר טוב, ${info.name}!</div>`;
-  html+=`<div class="day-label">יום ${DAY_NAMES[dow()]}</div>`;
+  // Tablet: dual columns
+  let html=`<div class="dual-tasks">`;
+  Object.keys(KIDS).forEach(k=>{html+=renderKidColumn(k)});
+  html+=`</div>`;
+
+  // Mobile: single kid view
+  html+=`<div class="single-tasks">`;
+  html+=`<div class="day-label" style="padding-top:10px">יום ${DAY_NAMES[dow()]}</div>`;
 
   html+=`<div class="progress-wrap">
     <div class="progress-bar">
@@ -590,8 +642,7 @@ function renderTasksView(){
 
   if(allDone&&isSchoolDay()){
     html+=`<div class="all-done-banner">
-      <div class="banner-emoji">\u{1F3C6}</div>
-      <div class="banner-text">סיימת הכל! אלוף/ה!</div>
+      <div class="banner-emoji" style="font-size:64px">\u{1F3C6}</div>
     </div>`;
   }
 
@@ -612,6 +663,7 @@ function renderTasksView(){
     </div>`;
   }
 
+  html+=`</div>`; // close single-tasks
   return html;
 }
 
@@ -758,7 +810,7 @@ function showDraft(milestone){
         showConfetti(player.rarity>=2);
         const celeb=document.createElement('div');
         celeb.className='celebration-text';
-        celeb.textContent=`${player.name}! ${CELEBRATIONS[Math.floor(Math.random()*CELEBRATIONS.length)]}`;
+        celeb.textContent=player.name;
         overlay.appendChild(celeb);
       },700);
 
@@ -995,6 +1047,30 @@ function bindEvents(){
         if(milestone){
           showDraft(milestone);
         }else if(done===total){
+          render();
+        }
+      },500);
+    });
+  });
+
+  // Tablet dual-column task clicks
+  document.querySelectorAll('[data-col-task]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const kid=el.dataset.kid;
+      const tid=el.dataset.colTask;
+      if(S[kid].tasks[tid])return;
+      S[kid].tasks[tid]=true;
+      S.currentKid=kid;
+      save();
+      showConfetti(false);
+
+      setTimeout(()=>{
+        const milestone=getNextMilestone(kid);
+        if(milestone){
+          showDraft(milestone);
+        }else if(doneCount(kid)===getTasks(kid).length){
+          render();
+        }else{
           render();
         }
       },500);
