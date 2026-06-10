@@ -479,7 +479,7 @@ function checkResets(){
   const today=todayStr();
   if(S.lastDate!==today){
     ['yehonatan','yoav'].forEach(k=>{S[k].tasks={};S[k].claimed=[]});
-    if(dow()===0){
+    if(dow()===6){
       ['yehonatan','yoav'].forEach(k=>{
         if(S[k].team.length>0){
           S[k].history.unshift({team:[...S[k].team],date:S.weekStart||today});
