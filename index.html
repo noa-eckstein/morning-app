@@ -112,6 +112,22 @@ body{
   font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(230,81,0,.3);
 }
 .swap-hint{text-align:center;font-size:13px;color:var(--text2);margin-top:6px}
+.swap-notify{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;
+}
+.swap-notify-box{
+  background:#fff;border-radius:20px;padding:32px 28px;text-align:center;
+  box-shadow:0 8px 32px rgba(0,0,0,.3);animation:pop .4s ease;max-width:320px;
+}
+.swap-notify-icon{font-size:56px;margin-bottom:12px}
+.swap-notify-title{font-size:22px;font-weight:800;color:var(--pitch);margin-bottom:8px}
+.swap-notify-sub{font-size:15px;color:var(--text2);margin-bottom:20px}
+.swap-notify-btn{
+  padding:12px 32px;border:none;border-radius:14px;
+  background:linear-gradient(135deg,#E65100,#FFB300);color:#fff;font-size:17px;
+  font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(230,81,0,.3);
+}
 .slot.swappable{cursor:pointer}
 .slot.swappable .slot-filled{animation:pulse 1.2s infinite}
 
@@ -865,6 +881,27 @@ function showDraft(milestone){
   });
 }
 
+function showSwapNotification(kid){
+  const info=KIDS[kid];
+  const overlay=document.createElement('div');
+  overlay.className='swap-notify';
+  overlay.innerHTML=`
+    <div class="swap-notify-box">
+      <div class="swap-notify-icon">🔄⭐</div>
+      <div class="swap-notify-title">כל הכבוד ${info.name}!</div>
+      <div class="swap-notify-sub">קיבלת 2 החלפות שחקנים!</div>
+      <button class="swap-notify-btn" id="go-to-swap">לנבחרת →</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#go-to-swap').addEventListener('click',()=>{
+    overlay.remove();
+    S.currentKid=kid;
+    S.view='team';
+    save();render();
+  });
+}
+
 function renderPlayerCard(p){
   const photo=PLAYER_PHOTOS[p.id];
   return `<div class="player-card rarity-${p.rarity}">
@@ -1094,11 +1131,15 @@ function bindEvents(){
       });
 
       setTimeout(()=>{
-        const milestone=getNextMilestone(kid);
-        if(milestone){
-          showDraft(milestone);
-        }else if(done===total){
-          render();
+        if(isBonus&&S[kid].team.length>0){
+          showSwapNotification(kid);
+        }else{
+          const milestone=getNextMilestone(kid);
+          if(milestone){
+            showDraft(milestone);
+          }else if(done===total){
+            render();
+          }
         }
       },500);
     });
@@ -1126,13 +1167,17 @@ function bindEvents(){
       showConfetti(isBonus?true:false);
 
       setTimeout(()=>{
-        const milestone=getNextMilestone(kid);
-        if(milestone){
-          showDraft(milestone);
-        }else if(doneCount(kid)===getTasks(kid).length){
-          render();
+        if(isBonus&&S[kid].team.length>0){
+          showSwapNotification(kid);
         }else{
-          render();
+          const milestone=getNextMilestone(kid);
+          if(milestone){
+            showDraft(milestone);
+          }else if(doneCount(kid)===getTasks(kid).length){
+            render();
+          }else{
+            render();
+          }
         }
       },500);
     });
