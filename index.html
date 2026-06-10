@@ -310,7 +310,7 @@ body{
 
 /* Tablet: side-by-side task columns */
 .dual-tasks{display:flex;gap:12px;padding:0 14px;flex-wrap:wrap}
-.dual-day-label{width:100%;text-align:center;font-size:15px;font-weight:600;color:var(--text2);padding:10px 0 2px}
+.dual-day-label{width:100%;text-align:center;font-size:22px;font-weight:700;color:var(--pitch);padding:12px 0 4px}
 .kid-column{
   flex:1;min-width:0;background:var(--card);border-radius:var(--radius);
   padding:12px;box-shadow:var(--shadow);
@@ -588,7 +588,7 @@ function renderKidColumn(kid){
 
   let html=`<div class="kid-column">
     <div class="col-header">
-      <div class="col-name">${info.name}</div>
+      <div class="col-name">${info.name} <span style="color:var(--text3);font-weight:400">(${done})</span></div>
     </div>
     <div class="col-progress">
       <div class="col-progress-fill" style="width:${pct}%"></div>
