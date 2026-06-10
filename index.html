@@ -102,6 +102,16 @@ body{
   transition:.3s;font-size:18px;
 }
 .task-item.done .task-check{background:var(--pitch);border-color:var(--pitch);color:#fff}
+.task-item.bonus{border:2px dashed var(--gold)}
+.task-item.bonus .task-name::after{content:' ⭐';font-size:12px}
+.swap-btn{
+  display:block;margin:10px auto;padding:10px 24px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,#E65100,#FFB300);color:#fff;font-size:16px;
+  font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(230,81,0,.3);
+}
+.swap-hint{text-align:center;font-size:13px;color:var(--text2);margin-top:6px}
+.slot.swappable{cursor:pointer}
+.slot.swappable .slot-filled{animation:pulse 1.2s infinite}
 
 .team-preview{padding:12px 14px}
 .team-preview-title{font-size:15px;font-weight:700;color:var(--text2);margin-bottom:8px;text-align:center}
@@ -425,6 +435,7 @@ const COMMON_TASKS=[
   {id:'socks',name:'לגרוב גרביים',icon:'\u{1F9E6}'},
   {id:'shoes',name:'לנעול נעליים',icon:'\u{1F45F}'},
   {id:'bag',name:'קופסה ובקבוק לתיק',icon:'\u{1F392}'},
+  {id:'tidy',name:'להחזיר 5 דברים למקום',icon:'\u{1F9F9}',bonus:true},
 ];
 
 const SPECIAL_TASKS={
@@ -467,7 +478,7 @@ function load(){
   if(!S)S={};
   S=Object.assign({currentKid:'yehonatan',view:'tasks',lastDate:null,weekStart:null},S);
   ['yehonatan','yoav'].forEach(k=>{
-    S[k]=Object.assign({photo:null,tasks:{},team:[],claimed:[],history:[]},S[k]||{});
+    S[k]=Object.assign({photo:null,tasks:{},team:[],claimed:[],history:[],swaps:0},S[k]||{});
     if(!S[k].photo&&KID_PHOTOS[k])S[k].photo=KID_PHOTOS[k];
   });
 }
@@ -481,7 +492,7 @@ function isSchoolDay(){const d=dow();return d>=0&&d<=4}
 function checkResets(){
   const today=todayStr();
   if(S.lastDate!==today){
-    ['yehonatan','yoav'].forEach(k=>{S[k].tasks={};S[k].claimed=[]});
+    ['yehonatan','yoav'].forEach(k=>{S[k].tasks={};S[k].claimed=[];S[k].swaps=0});
     if(dow()===6){
       ['yehonatan','yoav'].forEach(k=>{
         if(S[k].team.length>0){
@@ -601,9 +612,9 @@ function renderKidColumn(kid){
 
   html+=tasks.map(t=>{
     const isDone=S[kid].tasks[t.id];
-    return `<div class="col-task ${isDone?'done':''} ${t.special?'special':''}" data-kid="${kid}" data-col-task="${t.id}">
+    return `<div class="col-task ${isDone?'done':''} ${t.special?'special':''} ${t.bonus?'bonus':''}" data-kid="${kid}" data-col-task="${t.id}">
       <div class="col-task-icon">${t.icon}</div>
-      <div class="col-task-name">${t.name}</div>
+      <div class="col-task-name">${t.name}${t.bonus?' ⭐':''}</div>
       <div class="col-task-check">${isDone?'✓':''}</div>
     </div>`;
   }).join('');
@@ -652,7 +663,7 @@ function renderTasksView(){
 
   html+=`<div class="task-list">${tasks.map(t=>{
     const isDone=S[kid].tasks[t.id];
-    return `<div class="task-item ${isDone?'done':''} ${t.special?'special':''}" data-task="${t.id}">
+    return `<div class="task-item ${isDone?'done':''} ${t.special?'special':''} ${t.bonus?'bonus':''}" data-task="${t.id}">
       ${t.special?'<div class="task-special-badge">היום!</div>':''}
       <div class="task-icon">${t.icon}</div>
       <div class="task-name">${t.name}</div>
@@ -685,9 +696,16 @@ function renderTeamView(){
 
   const hl=S._highlightPos||null;
   S._highlightPos=null;
+  const swapMode=S._swapMode||false;
   let html=`<div class="team-header">⚽ הנבחרת של ${info.name}</div>`;
   html+=`<div class="team-count">${team.length}/11 שחקנים</div>`;
-  html+=renderPitch(kid,hl);
+  html+=renderPitch(kid,hl,swapMode);
+
+  if(swapMode){
+    html+=`<div class="swap-hint">לחץ על שחקן להחלפה (${S[kid].swaps} נותרו)</div>`;
+  }else if(S[kid].swaps>0&&team.length>0){
+    html+=`<button class="swap-btn" id="start-swap">🔄 החלף שחקן (${S[kid].swaps})</button>`;
+  }
 
   if(isComplete||isFri&&team.length>=11){
     html+=`<button class="match-btn" id="start-match">⚽ שחק משחק ידידות!</button>`;
@@ -713,7 +731,7 @@ function renderTeamView(){
   return html;
 }
 
-function renderPitch(kid,highlightPos){
+function renderPitch(kid,highlightPos,swapMode){
   const team=S[kid].team;
   const byPos={};
   team.forEach(t=>{byPos[t.pos]=getPlayerById(t.playerId)});
@@ -724,7 +742,8 @@ function renderPitch(kid,highlightPos){
     if(p){
       const ph=PLAYER_PHOTOS[p.id];
       const hl=pos===highlightPos?' just-drafted':'';
-      slots+=`<div class="slot pop${hl}" style="left:${coord.l}%;top:${coord.t}%">
+      const sw=swapMode?' swappable':'';
+      slots+=`<div class="slot pop${hl}${sw}" style="left:${coord.l}%;top:${coord.t}%" ${swapMode?`data-swap-pos="${pos}"`:''}>
         <div class="slot-filled">
           ${ph?`<img class="slot-photo" src="${ph}" alt="${p.name}" style="border-color:${rarityColor(p.rarity)}">`:`<div class="slot-photo-placeholder" style="border-color:${rarityColor(p.rarity)}">${p.num}</div>`}
           <div class="slot-name">${p.name}</div>
@@ -788,7 +807,7 @@ function showDraft(milestone){
   `).join('');
 
   overlay.innerHTML=`
-    <div class="draft-title">\u{1F389} בחר ${milestone.label}!</div>
+    <div class="draft-title">${milestone.index<0?'🔄':'🎉'} בחר ${milestone.label}!</div>
     <div class="draft-subtitle">לחץ על קלף</div>
     <div class="draft-cards">${cardsHtml}</div>
   `;
@@ -808,7 +827,7 @@ function showDraft(milestone){
       });
 
       S[kid].team.push({playerId:pid,pos,day:dow()});
-      S[kid].claimed.push(idx);
+      if(idx>=0)S[kid].claimed.push(idx);
       save();
 
       const player=getPlayerById(pid);
@@ -1031,11 +1050,13 @@ function bindEvents(){
       const kid=S.currentKid;
       if(S[kid].tasks[tid])return;
       S[kid].tasks[tid]=true;
+      const isBonus=COMMON_TASKS.find(t=>t.id===tid&&t.bonus);
+      if(isBonus){S[kid].swaps=(S[kid].swaps||0)+2}
       save();
 
       el.classList.add('done');
       el.querySelector('.task-check').textContent='✓';
-      showConfetti(false);
+      showConfetti(isBonus?true:false);
 
       const tasks=getTasks(kid);
       const done=doneCount(kid);
@@ -1069,9 +1090,11 @@ function bindEvents(){
       const tid=el.dataset.colTask;
       if(S[kid].tasks[tid])return;
       S[kid].tasks[tid]=true;
+      const isBonus=COMMON_TASKS.find(t=>t.id===tid&&t.bonus);
+      if(isBonus){S[kid].swaps=(S[kid].swaps||0)+2}
       S.currentKid=kid;
       save();
-      showConfetti(false);
+      showConfetti(isBonus?true:false);
 
       setTimeout(()=>{
         const milestone=getNextMilestone(kid);
@@ -1091,6 +1114,34 @@ function bindEvents(){
       S.view=el.dataset.view;
       save();
       render();
+    });
+  });
+
+  const swapBtn=document.getElementById('start-swap');
+  if(swapBtn)swapBtn.addEventListener('click',()=>{
+    S._swapMode=true;
+    render();
+  });
+
+  document.querySelectorAll('[data-swap-pos]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const pos=el.dataset.swapPos;
+      const kid=S.currentKid;
+      const entry=S[kid].team.find(t=>t.pos===pos);
+      if(!entry)return;
+      // Remove the player
+      S[kid].team=S[kid].team.filter(t=>t.pos!==pos);
+      S[kid].swaps--;
+      S._swapMode=false;
+      save();
+      // Draft a replacement
+      const gp=POS_MAP[pos];
+      const options=getDraftOptions(kid,gp);
+      if(options.length>0){
+        showDraft({pos,label:POS_LABELS[pos],index:-1});
+      }else{
+        render();
+      }
     });
   });
 
