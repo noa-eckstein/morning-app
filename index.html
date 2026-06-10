@@ -1144,7 +1144,7 @@ function bindEvents(){
   document.querySelectorAll('[data-action="reset-day"]').forEach(btn=>{
     btn.addEventListener('click',()=>{
       if(!confirm('להתחיל את היום מחדש?'))return;
-      ['yehonatan','yoav'].forEach(k=>{S[k].tasks={};S[k].claimed=[];S[k].swaps=0});
+      ['yehonatan','yoav'].forEach(k=>{S[k].tasks={};S[k].claimed=[];S[k].swaps=0;S[k].team=[]});
       save();
       render();
     });
