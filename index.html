@@ -338,6 +338,13 @@ body{
 
 /* Tablet: side-by-side task columns */
 .dual-tasks{display:flex;gap:12px;padding:0 14px;flex-wrap:wrap}
+.session-toggle{width:100%;display:flex;justify-content:center;gap:8px;padding:10px 0 4px}
+.session-btn{
+  padding:6px 20px;border:2px solid var(--pitch);border-radius:20px;
+  background:transparent;color:var(--pitch);font-size:14px;font-weight:700;
+  cursor:pointer;transition:.2s;
+}
+.session-btn.active{background:var(--pitch);color:#fff}
 .dual-day-label{width:100%;text-align:center;font-size:22px;font-weight:700;color:var(--pitch);padding:12px 0 4px}
 .kid-column{
   flex:1;min-width:0;background:var(--card);border-radius:var(--radius);
@@ -463,12 +470,30 @@ const SPECIAL_TASKS={
   ]
 };
 
+const EVENING_TASKS=[
+  {id:'ev_dinner',name:'ארוחת ערב',icon:'\u{1F37D}\u{FE0F}'},
+  {id:'ev_shower',name:'להתקלח',icon:'\u{1F6BF}'},
+  {id:'ev_dress',name:'להתלבש',icon:'\u{1F455}'},
+  {id:'ev_teeth',name:'לצחצח שיניים',icon:'\u{1FAA5}'},
+  {id:'ev_pee',name:'לעשות פיפי',icon:'\u{1F6BD}'},
+  {id:'ev_tidy',name:'להחזיר 5 דברים למקום',icon:'\u{1F9F9}',bonus:true},
+];
+
 const DAILY_DRAFT={
   0:[{pos:'ST',label:'חלוץ'},{pos:'CB1',label:'בלם'}],
   1:[{pos:'CM1',label:'קשר'},{pos:'RB',label:'מגן ימין'}],
   2:[{pos:'GK',label:'שוער'},{pos:'CM2',label:'קשר'},{pos:'LB',label:'מגן שמאל'}],
   3:[{pos:'RW',label:'כנף ימין'},{pos:'CM3',label:'קשר'}],
   4:[{pos:'LW',label:'כנף שמאל'},{pos:'CB2',label:'בלם'}],
+};
+
+const EVENING_DRAFT={
+  0:[{pos:'GK',label:'שוער'},{pos:'ST',label:'חלוץ'}],
+  1:[{pos:'CB1',label:'בלם'},{pos:'RW',label:'כנף ימין'}],
+  2:[{pos:'LB',label:'מגן שמאל'},{pos:'CM1',label:'קשר'}],
+  3:[{pos:'CB2',label:'בלם'},{pos:'CM2',label:'קשר'}],
+  4:[{pos:'RB',label:'מגן ימין'},{pos:'LW',label:'כנף שמאל'}],
+  5:[{pos:'CM3',label:'קשר'}],
 };
 
 const FORMATION_POS={
@@ -494,11 +519,15 @@ function load(){
     S=r?JSON.parse(r):null;
   }catch(e){S=null}
   if(!S)S={};
-  S=Object.assign({currentKid:'yehonatan',view:'tasks',lastDate:null,weekStart:null},S);
+  S=Object.assign({currentKid:'yehonatan',view:'tasks',session:'morning',lastDate:null,lastEveningDate:null,weekStart:null},S);
   ['yehonatan','yoav'].forEach(k=>{
-    S[k]=Object.assign({photo:null,tasks:{},team:[],claimed:[],history:[],swaps:0},S[k]||{});
+    S[k]=Object.assign({photo:null,tasks:{},team:[],claimed:[],history:[],swaps:0,
+      evTasks:{},evTeam:[],evClaimed:[],evHistory:[],evSwaps:0},S[k]||{});
     if(!S[k].photo&&KID_PHOTOS[k])S[k].photo=KID_PHOTOS[k];
   });
+  // Auto-detect session based on time
+  const ilH=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Jerusalem'})).getHours();
+  S.session=(ilH>=17||ilH<5)?'evening':'morning';
 }
 
 function save(){localStorage.setItem('morningChamps',JSON.stringify(S))}
@@ -509,12 +538,39 @@ function effectiveNow(){
   if(il.getHours()<5){il.setDate(il.getDate()-1)}
   return il;
 }
+function effectiveEveningNow(){
+  const now=new Date();
+  const il=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Jerusalem'}));
+  if(il.getHours()<17){il.setDate(il.getDate()-1)}
+  return il;
+}
 function todayStr(){return effectiveNow().toLocaleDateString('en-CA')}
+function eveningTodayStr(){return effectiveEveningNow().toLocaleDateString('en-CA')}
 function dow(){return effectiveNow().getDay()}
+function eveningDow(){return effectiveEveningNow().getDay()}
 function isSchoolDay(){const d=dow();return d>=0&&d<=4}
+function isEvening(){return S.session==='evening'}
+
+// Session context — returns field names and constants for current session
+function ctx(){
+  const ev=isEvening();
+  return{
+    tasks:ev?EVENING_TASKS:COMMON_TASKS,
+    draft:ev?EVENING_DRAFT:DAILY_DRAFT,
+    d:ev?eveningDow():dow(),
+    tk:ev?'evTasks':'tasks',
+    tm:ev?'evTeam':'team',
+    cl:ev?'evClaimed':'claimed',
+    sw:ev?'evSwaps':'swaps',
+    hi:ev?'evHistory':'history',
+    label:ev?'ערב':'בוקר',
+    emoji:ev?'🌙':'☀️',
+  };
+}
 
 function checkResets(){
   const today=todayStr();
+  // Morning reset at 5 AM
   if(S.lastDate!==today){
     ['yehonatan','yoav'].forEach(k=>{S[k].tasks={};S[k].claimed=[];S[k].swaps=0});
     if(dow()===6){
@@ -524,6 +580,11 @@ function checkResets(){
           if(S[k].history.length>8)S[k].history.pop();
         }
         S[k].team=[];
+        if(S[k].evTeam.length>0){
+          S[k].evHistory.unshift({team:[...S[k].evTeam],date:S.weekStart||today});
+          if(S[k].evHistory.length>8)S[k].evHistory.pop();
+        }
+        S[k].evTeam=[];
       });
       S.weekStart=today;
     }
@@ -531,44 +592,58 @@ function checkResets(){
     S.lastDate=today;
     save();
   }
+  // Evening reset at 5 PM
+  const evToday=eveningTodayStr();
+  if(S.lastEveningDate!==evToday){
+    ['yehonatan','yoav'].forEach(k=>{S[k].evTasks={};S[k].evClaimed=[];S[k].evSwaps=0});
+    S.lastEveningDate=evToday;
+    save();
+  }
 }
 
 function getTasks(kid){
-  const tasks=[...COMMON_TASKS];
-  (SPECIAL_TASKS[kid]||[]).forEach(t=>{
-    if(t.days.includes(dow()))tasks.push({...t,special:true});
-  });
+  const c=ctx();
+  const tasks=[...c.tasks];
+  if(!isEvening()){
+    (SPECIAL_TASKS[kid]||[]).forEach(t=>{
+      if(t.days.includes(c.d))tasks.push({...t,special:true});
+    });
+  }
   return tasks;
 }
 
-function doneCount(kid){return getTasks(kid).filter(t=>S[kid].tasks[t.id]).length}
-function nonBonusDone(kid){return getTasks(kid).filter(t=>!t.bonus&&S[kid].tasks[t.id]).length}
+function doneCount(kid){const c=ctx();return getTasks(kid).filter(t=>S[kid][c.tk][t.id]).length}
+function nonBonusDone(kid){const c=ctx();return getTasks(kid).filter(t=>!t.bonus&&S[kid][c.tk][t.id]).length}
 function nonBonusTotal(kid){return getTasks(kid).filter(t=>!t.bonus).length}
 
 function getMilestones(kid){
-  const draft=DAILY_DRAFT[dow()];
+  const c=ctx();
+  const draft=c.draft[c.d];
   if(!draft)return[];
   const total=nonBonusTotal(kid);
   return draft.map((slot,i)=>({...slot,threshold:Math.ceil(total*(i+1)/draft.length),index:i}));
 }
 
 function getNextMilestone(kid){
+  const c=ctx();
   const ms=getMilestones(kid);
   const done=nonBonusDone(kid);
-  return ms.find(m=>done>=m.threshold&&!S[kid].claimed.includes(m.index));
+  return ms.find(m=>done>=m.threshold&&!S[kid][c.cl].includes(m.index));
 }
 
 function getPlayerById(id){return PLAYERS.find(p=>p.id===id)}
 
 function getDraftOptions(kid,generalPos){
-  const taken=new Set(S[kid].team.map(t=>t.playerId));
+  const c=ctx();
+  const taken=new Set(S[kid][c.tm].map(t=>t.playerId));
   const eligible=PLAYERS.filter(p=>p.pos===generalPos&&!taken.has(p.id));
   const shuffled=eligible.sort(()=>Math.random()-.5);
   return shuffled.slice(0,3);
 }
 
 function autoFillTeam(kid){
-  const team=S[kid].team;
+  const c=ctx();
+  const team=S[kid][c.tm];
   const filled=new Set(team.map(t=>t.pos));
   Object.keys(FORMATION_POS).forEach(pos=>{
     if(filled.has(pos))return;
@@ -637,8 +712,9 @@ function renderKidColumn(kid){
     html+=`<div class="col-done-trophy">\u{1F3C6}</div>`;
   }
 
+  const c=ctx();
   html+=tasks.map(t=>{
-    const isDone=S[kid].tasks[t.id];
+    const isDone=S[kid][c.tk][t.id];
     return `<div class="col-task ${isDone?'done':''} ${t.special?'special':''} ${t.bonus?'bonus':''}" data-kid="${kid}" data-col-task="${t.id}">
       <div class="col-task-icon">${t.icon}</div>
       <div class="col-task-name">${t.name}${t.bonus?' ⭐':''}</div>
@@ -650,7 +726,15 @@ function renderKidColumn(kid){
   return html;
 }
 
+function renderSessionToggle(){
+  return `<div class="session-toggle">
+    <button class="session-btn ${S.session==='morning'?'active':''}" data-session="morning">☀️ בוקר</button>
+    <button class="session-btn ${S.session==='evening'?'active':''}" data-session="evening">🌙 ערב</button>
+  </div>`;
+}
+
 function renderTasksView(){
+  const c=ctx();
   const kid=S.currentKid;
   const info=KIDS[kid];
   const tasks=getTasks(kid);
@@ -659,16 +743,19 @@ function renderTasksView(){
   const allDone=done===total;
   const ms=getMilestones(kid);
   const pct=total?Math.round(done/total*100):0;
+  const dayName=DAY_NAMES[c.d];
 
   // Tablet: dual columns
   let html=`<div class="dual-tasks">`;
-  html+=`<div class="dual-day-label">יום ${DAY_NAMES[dow()]} <span class="reset-btn" data-action="reset-day">↩</span></div>`;
+  html+=renderSessionToggle();
+  html+=`<div class="dual-day-label">${c.emoji} יום ${dayName} — ${c.label} <span class="reset-btn" data-action="reset-day">↩</span></div>`;
   Object.keys(KIDS).forEach(k=>{html+=renderKidColumn(k)});
   html+=`</div>`;
 
   // Mobile: single kid view
   html+=`<div class="single-tasks">`;
-  html+=`<div class="day-label" style="padding-top:10px">יום ${DAY_NAMES[dow()]} <span class="reset-btn" data-action="reset-day">↩</span></div>`;
+  html+=renderSessionToggle();
+  html+=`<div class="day-label" style="padding-top:10px">${c.emoji} יום ${dayName} — ${c.label} <span class="reset-btn" data-action="reset-day">↩</span></div>`;
 
   html+=`<div class="progress-wrap">
     <div class="progress-bar">
@@ -676,8 +763,9 @@ function renderTasksView(){
       <div class="progress-text">${done} / ${total}</div>
     </div>
     ${ms.length?`<div class="milestones">${ms.map(m=>{
-      const reached=done>=m.threshold;
-      const next=!reached&&ms.filter(mm=>done>=mm.threshold).length===ms.indexOf(m);
+      const nb=nonBonusDone(kid);
+      const reached=nb>=m.threshold;
+      const next=!reached&&ms.filter(mm=>nb>=mm.threshold).length===ms.indexOf(m);
       return `<span class="milestone ${reached?'reached':''} ${next?'next':''}">⚽</span>`;
     }).join('')}</div>`:''}
   </div>`;
@@ -689,7 +777,7 @@ function renderTasksView(){
   }
 
   html+=`<div class="task-list">${tasks.map(t=>{
-    const isDone=S[kid].tasks[t.id];
+    const isDone=S[kid][c.tk][t.id];
     return `<div class="task-item ${isDone?'done':''} ${t.special?'special':''} ${t.bonus?'bonus':''}" data-task="${t.id}">
       ${t.special?'<div class="task-special-badge">היום!</div>':''}
       <div class="task-icon">${t.icon}</div>
@@ -698,10 +786,10 @@ function renderTasksView(){
     </div>`;
   }).join('')}</div>`;
 
-  const team=S[kid].team;
+  const team=S[kid][c.tm];
   if(team.length>0){
     html+=`<div class="team-preview">
-      <div class="team-preview-title">⚽ הנבחרת שלי (${team.length}/11)</div>
+      <div class="team-preview-title">⚽ הנבחרת ${c.label} שלי (${team.length}/11)</div>
     </div>`;
   }
 
@@ -710,9 +798,10 @@ function renderTasksView(){
 }
 
 function renderTeamForKid(kid){
+  const c=ctx();
   const info=KIDS[kid];
-  const team=S[kid].team;
-  const isFri=dow()===5||dow()===6;
+  const team=S[kid][c.tm];
+  const isFri=c.d===5||c.d===6;
   const isComplete=team.length>=11;
 
   if(isFri&&team.length>0&&team.length<11){
@@ -722,23 +811,23 @@ function renderTeamForKid(kid){
 
   const hl=(S._highlightKid===kid||!S._highlightKid)?S._highlightPos||null:null;
   const swapMode=(S._swapKid===kid)?S._swapMode||false:false;
-  let html=`<div class="team-header">⚽ הנבחרת של ${info.name}</div>`;
+  let html=`<div class="team-header">${c.emoji} נבחרת ${c.label} — ${info.name}</div>`;
   html+=`<div class="team-count">${team.length}/11 שחקנים</div>`;
   html+=renderPitch(kid,hl,swapMode);
 
   if(swapMode){
-    html+=`<div class="swap-hint">לחץ על שחקן להחלפה (${S[kid].swaps} נותרו)</div>`;
-  }else if(S[kid].swaps>0&&team.length>0){
-    html+=`<button class="swap-btn" data-swap-kid="${kid}">🔄 החלף שחקן (${S[kid].swaps})</button>`;
+    html+=`<div class="swap-hint">לחץ על שחקן להחלפה (${S[kid][c.sw]} נותרו)</div>`;
+  }else if(S[kid][c.sw]>0&&team.length>0){
+    html+=`<button class="swap-btn" data-swap-kid="${kid}">🔄 החלף שחקן (${S[kid][c.sw]})</button>`;
   }
 
   if(isComplete||isFri&&team.length>=11){
     html+=`<button class="match-btn" data-match-kid="${kid}">⚽ שחק משחק ידידות!</button>`;
   }
 
-  if(S[kid].history.length>0){
-    html+=`<div class="history-section"><div class="history-title">\u{1F3C6} נבחרות קודמות</div>`;
-    S[kid].history.forEach((h,i)=>{
+  if(S[kid][c.hi].length>0){
+    html+=`<div class="history-section"><div class="history-title">\u{1F3C6} נבחרות ${c.label} קודמות</div>`;
+    S[kid][c.hi].forEach((h,i)=>{
       const players=h.team.map(t=>getPlayerById(t.playerId)).filter(Boolean);
       const names=players.slice(0,3).map(p=>p.name).join(', ');
       html+=`<div class="history-item" data-kid="${kid}" data-history="${i}">
@@ -762,19 +851,24 @@ function renderTeamView(){
 
   // Tablet: both kids
   let html=`<div class="dual-tasks">`;
+  html+=renderSessionToggle();
   Object.keys(KIDS).forEach(k=>{
     html+=`<div class="kid-column">${renderTeamForKid(k)}</div>`;
   });
   html+=`</div>`;
 
   // Mobile: single kid
-  html+=`<div class="single-tasks">${renderTeamForKid(S.currentKid)}</div>`;
+  html+=`<div class="single-tasks">`;
+  html+=renderSessionToggle();
+  html+=renderTeamForKid(S.currentKid);
+  html+=`</div>`;
 
   return html;
 }
 
 function renderPitch(kid,highlightPos,swapMode){
-  const team=S[kid].team;
+  const c=ctx();
+  const team=S[kid][c.tm];
   const byPos={};
   team.forEach(t=>{byPos[t.pos]=getPlayerById(t.playerId)});
 
@@ -870,8 +964,9 @@ function showDraft(milestone){
         if(c!==this)c.classList.add('not-picked');
       });
 
-      S[kid].team.push({playerId:pid,pos,day:dow()});
-      if(idx>=0)S[kid].claimed.push(idx);
+      const _c=ctx();
+      S[kid][_c.tm].push({playerId:pid,pos,day:_c.d});
+      if(idx>=0)S[kid][_c.cl].push(idx);
       save();
 
       const player=getPlayerById(pid);
@@ -1112,19 +1207,21 @@ function bindEvents(){
 
   document.querySelectorAll('[data-task]').forEach(el=>{
     el.addEventListener('click',()=>{
+      const c=ctx();
       const tid=el.dataset.task;
       const kid=S.currentKid;
-      const isBonus=COMMON_TASKS.find(t=>t.id===tid&&t.bonus);
+      const allTasks=[...c.tasks,...(isEvening()?[]:(SPECIAL_TASKS[kid]||[]))];
+      const isBonus=allTasks.find(t=>t.id===tid&&t.bonus);
 
       // Toggle off
-      if(S[kid].tasks[tid]){
-        delete S[kid].tasks[tid];
-        if(isBonus){S[kid].swaps=Math.max(0,(S[kid].swaps||0)-2)}
+      if(S[kid][c.tk][tid]){
+        delete S[kid][c.tk][tid];
+        if(isBonus){S[kid][c.sw]=Math.max(0,(S[kid][c.sw]||0)-2)}
         save();render();return;
       }
 
-      S[kid].tasks[tid]=true;
-      if(isBonus){S[kid].swaps=(S[kid].swaps||0)+2}
+      S[kid][c.tk][tid]=true;
+      if(isBonus){S[kid][c.sw]=(S[kid][c.sw]||0)+2}
       save();
 
       el.classList.add('done');
@@ -1147,7 +1244,7 @@ function bindEvents(){
       });
 
       setTimeout(()=>{
-        if(isBonus&&S[kid].team.length>0){
+        if(isBonus&&S[kid][c.tm].length>0){
           showSwapNotification(kid);
         }else{
           const milestone=getNextMilestone(kid);
@@ -1164,26 +1261,28 @@ function bindEvents(){
   // Tablet dual-column task clicks
   document.querySelectorAll('[data-col-task]').forEach(el=>{
     el.addEventListener('click',()=>{
+      const c=ctx();
       const kid=el.dataset.kid;
       const tid=el.dataset.colTask;
-      const isBonus=COMMON_TASKS.find(t=>t.id===tid&&t.bonus);
+      const allTasks=[...c.tasks,...(isEvening()?[]:(SPECIAL_TASKS[kid]||[]))];
+      const isBonus=allTasks.find(t=>t.id===tid&&t.bonus);
 
       // Toggle off
-      if(S[kid].tasks[tid]){
-        delete S[kid].tasks[tid];
-        if(isBonus){S[kid].swaps=Math.max(0,(S[kid].swaps||0)-2)}
+      if(S[kid][c.tk][tid]){
+        delete S[kid][c.tk][tid];
+        if(isBonus){S[kid][c.sw]=Math.max(0,(S[kid][c.sw]||0)-2)}
         S.currentKid=kid;
         save();render();return;
       }
 
-      S[kid].tasks[tid]=true;
-      if(isBonus){S[kid].swaps=(S[kid].swaps||0)+2}
+      S[kid][c.tk][tid]=true;
+      if(isBonus){S[kid][c.sw]=(S[kid][c.sw]||0)+2}
       S.currentKid=kid;
       save();
       showConfetti(isBonus?true:false);
 
       setTimeout(()=>{
-        if(isBonus&&S[kid].team.length>0){
+        if(isBonus&&S[kid][c.tm].length>0){
           showSwapNotification(kid);
         }else{
           const milestone=getNextMilestone(kid);
@@ -1207,10 +1306,19 @@ function bindEvents(){
     });
   });
 
+  document.querySelectorAll('[data-session]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      S.session=el.dataset.session;
+      save();
+      render();
+    });
+  });
+
   document.querySelectorAll('[data-action="reset-day"]').forEach(btn=>{
     btn.addEventListener('click',()=>{
-      if(!confirm('להתחיל את היום מחדש?'))return;
-      ['yehonatan','yoav'].forEach(k=>{S[k].tasks={};S[k].claimed=[];S[k].swaps=0;S[k].team=[]});
+      const c=ctx();
+      if(!confirm(`להתחיל ${c.label} מחדש?`))return;
+      ['yehonatan','yoav'].forEach(k=>{S[k][c.tk]={};S[k][c.cl]=[];S[k][c.sw]=0;S[k][c.tm]=[]});
       save();
       render();
     });
@@ -1228,12 +1336,13 @@ function bindEvents(){
 
   document.querySelectorAll('[data-swap-pos]').forEach(el=>{
     el.addEventListener('click',()=>{
+      const c=ctx();
       const pos=el.dataset.swapPos;
       const kid=S._swapKid||S.currentKid;
-      const entry=S[kid].team.find(t=>t.pos===pos);
+      const entry=S[kid][c.tm].find(t=>t.pos===pos);
       if(!entry)return;
-      S[kid].team=S[kid].team.filter(t=>t.pos!==pos);
-      S[kid].swaps--;
+      S[kid][c.tm]=S[kid][c.tm].filter(t=>t.pos!==pos);
+      S[kid][c.sw]--;
       S._swapMode=false;
       S._swapKid=null;
       S.currentKid=kid;
