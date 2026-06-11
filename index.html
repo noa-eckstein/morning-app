@@ -566,7 +566,7 @@ function effectiveNow(){
 function effectiveEveningNow(){
   const now=new Date();
   const il=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Jerusalem'}));
-  if(il.getHours()<17){il.setDate(il.getDate()-1)}
+  if(il.getHours()<5){il.setDate(il.getDate()-1)}
   return il;
 }
 function todayStr(){return effectiveNow().toLocaleDateString('en-CA')}
