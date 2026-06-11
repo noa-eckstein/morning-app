@@ -709,8 +709,7 @@ function renderTasksView(){
   return html;
 }
 
-function renderTeamView(){
-  const kid=S.currentKid;
+function renderTeamForKid(kid){
   const info=KIDS[kid];
   const team=S[kid].team;
   const isFri=dow()===5||dow()===6;
@@ -721,9 +720,8 @@ function renderTeamView(){
     save();
   }
 
-  const hl=S._highlightPos||null;
-  S._highlightPos=null;
-  const swapMode=S._swapMode||false;
+  const hl=(S._highlightKid===kid||!S._highlightKid)?S._highlightPos||null:null;
+  const swapMode=(S._swapKid===kid)?S._swapMode||false:false;
   let html=`<div class="team-header">⚽ הנבחרת של ${info.name}</div>`;
   html+=`<div class="team-count">${team.length}/11 שחקנים</div>`;
   html+=renderPitch(kid,hl,swapMode);
@@ -731,11 +729,11 @@ function renderTeamView(){
   if(swapMode){
     html+=`<div class="swap-hint">לחץ על שחקן להחלפה (${S[kid].swaps} נותרו)</div>`;
   }else if(S[kid].swaps>0&&team.length>0){
-    html+=`<button class="swap-btn" id="start-swap">🔄 החלף שחקן (${S[kid].swaps})</button>`;
+    html+=`<button class="swap-btn" data-swap-kid="${kid}">🔄 החלף שחקן (${S[kid].swaps})</button>`;
   }
 
   if(isComplete||isFri&&team.length>=11){
-    html+=`<button class="match-btn" id="start-match">⚽ שחק משחק ידידות!</button>`;
+    html+=`<button class="match-btn" data-match-kid="${kid}">⚽ שחק משחק ידידות!</button>`;
   }
 
   if(S[kid].history.length>0){
@@ -743,7 +741,7 @@ function renderTeamView(){
     S[kid].history.forEach((h,i)=>{
       const players=h.team.map(t=>getPlayerById(t.playerId)).filter(Boolean);
       const names=players.slice(0,3).map(p=>p.name).join(', ');
-      html+=`<div class="history-item" data-history="${i}">
+      html+=`<div class="history-item" data-kid="${kid}" data-history="${i}">
         <span>${names}${players.length>3?' ...':''}</span>
         <span style="font-size:11px;color:var(--text3)">${h.date||''}</span>
       </div>`;
@@ -754,6 +752,23 @@ function renderTeamView(){
   if(!isSchoolDay()&&team.length===0){
     html+=`<div class="empty-msg">\u{1F31F} ביום ראשון מתחילים לבנות נבחרת חדשה!</div>`;
   }
+
+  return html;
+}
+
+function renderTeamView(){
+  S._highlightPos=null;
+  S._highlightKid=null;
+
+  // Tablet: both kids
+  let html=`<div class="dual-tasks">`;
+  Object.keys(KIDS).forEach(k=>{
+    html+=`<div class="kid-column">${renderTeamForKid(k)}</div>`;
+  });
+  html+=`</div>`;
+
+  // Mobile: single kid
+  html+=`<div class="single-tasks">${renderTeamForKid(S.currentKid)}</div>`;
 
   return html;
 }
@@ -867,6 +882,7 @@ function showDraft(milestone){
       setTimeout(()=>{
         overlay.remove();
         S._highlightPos=pos;
+        S._highlightKid=kid;
         S.view='team';
         render();
         document.querySelectorAll('.slot.just-drafted').forEach(el=>el.scrollIntoView({behavior:'smooth',block:'center'}));
@@ -1200,24 +1216,28 @@ function bindEvents(){
     });
   });
 
-  const swapBtn=document.getElementById('start-swap');
-  if(swapBtn)swapBtn.addEventListener('click',()=>{
-    S._swapMode=true;
-    render();
+  document.querySelectorAll('[data-swap-kid]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const kid=btn.dataset.swapKid;
+      S.currentKid=kid;
+      S._swapMode=true;
+      S._swapKid=kid;
+      render();
+    });
   });
 
   document.querySelectorAll('[data-swap-pos]').forEach(el=>{
     el.addEventListener('click',()=>{
       const pos=el.dataset.swapPos;
-      const kid=S.currentKid;
+      const kid=S._swapKid||S.currentKid;
       const entry=S[kid].team.find(t=>t.pos===pos);
       if(!entry)return;
-      // Remove the player
       S[kid].team=S[kid].team.filter(t=>t.pos!==pos);
       S[kid].swaps--;
       S._swapMode=false;
+      S._swapKid=null;
+      S.currentKid=kid;
       save();
-      // Draft a replacement
       const gp=POS_MAP[pos];
       const options=getDraftOptions(kid,gp);
       if(options.length>0){
@@ -1228,8 +1248,13 @@ function bindEvents(){
     });
   });
 
-  const matchBtn=document.getElementById('start-match');
-  if(matchBtn)matchBtn.addEventListener('click',startMatch);
+  document.querySelectorAll('[data-match-kid]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      S.currentKid=btn.dataset.matchKid;
+      save();
+      startMatch();
+    });
+  });
 
   const matchBack=document.getElementById('match-back');
   if(matchBack)matchBack.addEventListener('click',stopMatch);
