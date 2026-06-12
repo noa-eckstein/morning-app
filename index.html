@@ -1365,10 +1365,11 @@ function pickMatchPlayer(playerId){
   const ri=m.rounds[m.round];
   const homePick=getPlayerById(playerId);
   if(!homePick)return;
-  m.homePick=homePick;
-  m.usedHome.add(playerId);
   const awayPick=getComputerPick(ri,m.usedAway,m.computerTeam);
   if(!awayPick)return;
+  // Mark both as used only after both picks succeed
+  m.homePick=homePick;
+  m.usedHome.add(playerId);
   m.awayPick=awayPick;
   m.usedAway.add(awayPick.id);
   const stat=ri.stat;
@@ -1410,7 +1411,9 @@ function showMatchFinal(){
 }
 
 function stopMatch(){
-  wcMatch=null;S.view='team';render();
+  // Clean up any match overlays left on screen
+  document.querySelectorAll('.wc-round-announce,.wc-final').forEach(el=>el.remove());
+  wcMatch=null;S.view='team';save();render();
 }
 
 function bindEvents(){
