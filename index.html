@@ -547,8 +547,8 @@ function load(){
   if(!S)S={};
   S=Object.assign({currentKid:'yehonatan',view:'tasks',session:'morning',lastDate:null,lastEveningDate:null,weekStart:null},S);
   ['yehonatan','yoav'].forEach(k=>{
-    S[k]=Object.assign({photo:null,tasks:{},team:[],claimed:[],history:[],swaps:0,legSwaps:0,
-      evTasks:{},evTeam:[],evClaimed:[],evHistory:[],evSwaps:0,evLegSwaps:0},S[k]||{});
+    S[k]=Object.assign({photo:null,tasks:{},team:[],claimed:[],bonusClaimed:[],history:[],swaps:0,legSwaps:0,
+      evTasks:{},evTeam:[],evClaimed:[],evBonusClaimed:[],evHistory:[],evSwaps:0,evLegSwaps:0},S[k]||{});
     if(!S[k].photo&&KID_PHOTOS[k])S[k].photo=KID_PHOTOS[k];
   });
   // Auto-detect session based on time
@@ -587,6 +587,7 @@ function ctx(){
     tk:ev?'evTasks':'tasks',
     tm:ev?'evTeam':'team',
     cl:ev?'evClaimed':'claimed',
+    bc:ev?'evBonusClaimed':'bonusClaimed',
     sw:ev?'evSwaps':'swaps',
     lsw:ev?'evLegSwaps':'legSwaps',
     hi:ev?'evHistory':'history',
@@ -599,8 +600,8 @@ function checkResets(){
   const today=todayStr();
   // Morning reset at 5 AM
   if(S.lastDate!==today){
-    ['yehonatan','yoav'].forEach(k=>{S[k].tasks={};S[k].claimed=[];S[k].swaps=0;S[k].legSwaps=0});
-    if(dow()===6){
+    ['yehonatan','yoav'].forEach(k=>{S[k].tasks={};S[k].claimed=[];S[k].bonusClaimed=[];S[k].swaps=0;S[k].legSwaps=0});
+    if(dow()===0){
       ['yehonatan','yoav'].forEach(k=>{
         if(S[k].team.length>0){
           S[k].history.unshift({team:[...S[k].team],date:S.weekStart||today});
@@ -622,7 +623,7 @@ function checkResets(){
   // Evening reset at 5 PM
   const evToday=eveningTodayStr();
   if(S.lastEveningDate!==evToday){
-    ['yehonatan','yoav'].forEach(k=>{S[k].evTasks={};S[k].evClaimed=[];S[k].evSwaps=0;S[k].evLegSwaps=0});
+    ['yehonatan','yoav'].forEach(k=>{S[k].evTasks={};S[k].evClaimed=[];S[k].evBonusClaimed=[];S[k].evSwaps=0;S[k].evLegSwaps=0});
     S.lastEveningDate=evToday;
     save();
   }
@@ -831,10 +832,10 @@ function renderTeamForKid(kid){
   const c=ctx();
   const info=KIDS[kid];
   const team=S[kid][c.tm];
-  const isFri=c.d===5||c.d===6;
+  const isShabat=c.d===6;
   const isComplete=team.length>=11;
 
-  if(isFri&&team.length>0&&team.length<11){
+  if(isShabat&&team.length>0&&team.length<11){
     autoFillTeam(kid);
     save();
   }
@@ -1271,12 +1272,17 @@ function bindEvents(){
       const isBonus=taskDef&&taskDef.bonus;
       const isLeg=taskDef&&taskDef.legendary;
 
-      // Already done — no toggle off (use reset button)
-      if(S[kid][c.tk][tid])return;
+      // Toggle off — allowed, but rewards already granted stay
+      if(S[kid][c.tk][tid]){
+        delete S[kid][c.tk][tid];
+        save();render();return;
+      }
 
       S[kid][c.tk][tid]=true;
-      if(isLeg){S[kid][c.lsw]=(S[kid][c.lsw]||0)+1}
-      else if(isBonus){S[kid][c.sw]=(S[kid][c.sw]||0)+2}
+      // Only grant bonus reward if not already claimed for this task
+      const bonusNew=isBonus&&!S[kid][c.bc].includes(tid);
+      if(isLeg&&bonusNew){S[kid][c.lsw]=(S[kid][c.lsw]||0)+1;S[kid][c.bc].push(tid)}
+      else if(isBonus&&bonusNew){S[kid][c.sw]=(S[kid][c.sw]||0)+2;S[kid][c.bc].push(tid)}
       save();
 
       el.classList.add('done');
@@ -1299,9 +1305,9 @@ function bindEvents(){
       });
 
       setTimeout(()=>{
-        if(isLeg&&S[kid][c.tm].length>0){
+        if(isLeg&&bonusNew&&S[kid][c.tm].length>0){
           showLegendarySwapNotification(kid);
-        }else if(isBonus&&S[kid][c.tm].length>0){
+        }else if(isBonus&&bonusNew&&S[kid][c.tm].length>0){
           showSwapNotification(kid);
         }else{
           const milestone=getNextMilestone(kid);
@@ -1326,20 +1332,25 @@ function bindEvents(){
       const isBonus=taskDef&&taskDef.bonus;
       const isLeg=taskDef&&taskDef.legendary;
 
-      // Already done — no toggle off (use reset button)
-      if(S[kid][c.tk][tid])return;
+      // Toggle off — allowed, but rewards already granted stay
+      if(S[kid][c.tk][tid]){
+        delete S[kid][c.tk][tid];
+        S.currentKid=kid;
+        save();render();return;
+      }
 
       S[kid][c.tk][tid]=true;
-      if(isLeg){S[kid][c.lsw]=(S[kid][c.lsw]||0)+1}
-      else if(isBonus){S[kid][c.sw]=(S[kid][c.sw]||0)+2}
+      const bonusNew=isBonus&&!S[kid][c.bc].includes(tid);
+      if(isLeg&&bonusNew){S[kid][c.lsw]=(S[kid][c.lsw]||0)+1;S[kid][c.bc].push(tid)}
+      else if(isBonus&&bonusNew){S[kid][c.sw]=(S[kid][c.sw]||0)+2;S[kid][c.bc].push(tid)}
       S.currentKid=kid;
       save();
       showConfetti(true);
 
       setTimeout(()=>{
-        if(isLeg&&S[kid][c.tm].length>0){
+        if(isLeg&&bonusNew&&S[kid][c.tm].length>0){
           showLegendarySwapNotification(kid);
-        }else if(isBonus&&S[kid][c.tm].length>0){
+        }else if(isBonus&&bonusNew&&S[kid][c.tm].length>0){
           showSwapNotification(kid);
         }else{
           const milestone=getNextMilestone(kid);
@@ -1375,7 +1386,7 @@ function bindEvents(){
     btn.addEventListener('click',()=>{
       const c=ctx();
       if(!confirm(`להתחיל ${c.label} מחדש?`))return;
-      ['yehonatan','yoav'].forEach(k=>{S[k][c.tk]={};S[k][c.cl]=[];S[k][c.sw]=0;S[k][c.lsw]=0});
+      ['yehonatan','yoav'].forEach(k=>{S[k][c.tk]={};S[k][c.cl]=[];S[k][c.bc]=[];S[k][c.sw]=0;S[k][c.lsw]=0});
       save();
       render();
     });
