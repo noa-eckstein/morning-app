@@ -507,9 +507,10 @@ const EVENING_TASKS=[
 const DAILY_DRAFT={
   0:[{pos:'ST',label:'חלוץ'},{pos:'CB1',label:'בלם'}],
   1:[{pos:'CM1',label:'קשר'},{pos:'RB',label:'מגן ימין'}],
-  2:[{pos:'GK',label:'שוער'},{pos:'CM2',label:'קשר'},{pos:'LB',label:'מגן שמאל'}],
+  2:[{pos:'GK',label:'שוער'},{pos:'CM2',label:'קשר'}],
   3:[{pos:'RW',label:'כנף ימין'},{pos:'CM3',label:'קשר'}],
   4:[{pos:'LW',label:'כנף שמאל'},{pos:'CB2',label:'בלם'}],
+  5:[{pos:'LB',label:'מגן שמאל'}],
 };
 
 const EVENING_DRAFT={
@@ -647,7 +648,8 @@ function getMilestones(kid){
   const draft=c.draft[c.d];
   if(!draft)return[];
   const total=nonBonusTotal(kid);
-  return draft.map((slot,i)=>({...slot,threshold:Math.ceil(total*(i+1)/draft.length),index:i}));
+  const divisor=Math.max(draft.length,2); // single-pick days: need ~50% not 100%
+  return draft.map((slot,i)=>({...slot,threshold:Math.ceil(total*(i+1)/divisor),index:i}));
 }
 
 function getNextMilestone(kid){
@@ -1269,13 +1271,8 @@ function bindEvents(){
       const isBonus=taskDef&&taskDef.bonus;
       const isLeg=taskDef&&taskDef.legendary;
 
-      // Toggle off
-      if(S[kid][c.tk][tid]){
-        delete S[kid][c.tk][tid];
-        if(isLeg){S[kid][c.lsw]=Math.max(0,(S[kid][c.lsw]||0)-1)}
-        else if(isBonus){S[kid][c.sw]=Math.max(0,(S[kid][c.sw]||0)-2)}
-        save();render();return;
-      }
+      // Already done — no toggle off (use reset button)
+      if(S[kid][c.tk][tid])return;
 
       S[kid][c.tk][tid]=true;
       if(isLeg){S[kid][c.lsw]=(S[kid][c.lsw]||0)+1}
@@ -1329,14 +1326,8 @@ function bindEvents(){
       const isBonus=taskDef&&taskDef.bonus;
       const isLeg=taskDef&&taskDef.legendary;
 
-      // Toggle off
-      if(S[kid][c.tk][tid]){
-        delete S[kid][c.tk][tid];
-        if(isLeg){S[kid][c.lsw]=Math.max(0,(S[kid][c.lsw]||0)-1)}
-        else if(isBonus){S[kid][c.sw]=Math.max(0,(S[kid][c.sw]||0)-2)}
-        S.currentKid=kid;
-        save();render();return;
-      }
+      // Already done — no toggle off (use reset button)
+      if(S[kid][c.tk][tid])return;
 
       S[kid][c.tk][tid]=true;
       if(isLeg){S[kid][c.lsw]=(S[kid][c.lsw]||0)+1}
@@ -1384,7 +1375,7 @@ function bindEvents(){
     btn.addEventListener('click',()=>{
       const c=ctx();
       if(!confirm(`להתחיל ${c.label} מחדש?`))return;
-      ['yehonatan','yoav'].forEach(k=>{S[k][c.tk]={};S[k][c.cl]=[];S[k][c.sw]=0;S[k][c.lsw]=0;S[k][c.tm]=[]});
+      ['yehonatan','yoav'].forEach(k=>{S[k][c.tk]={};S[k][c.cl]=[];S[k][c.sw]=0;S[k][c.lsw]=0});
       save();
       render();
     });
