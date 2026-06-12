@@ -564,14 +564,10 @@ function effectiveNow(){
   if(il.getHours()<5){il.setDate(il.getDate()-1)}
   return il;
 }
-function effectiveEveningNow(){
-  const now=new Date();
-  const il=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Jerusalem'}));
-  if(il.getHours()<5){il.setDate(il.getDate()-1)}
-  return il;
-}
+// Evening uses same 5AM boundary — both sessions reset at 5AM Israel time
+function effectiveEveningNow(){return effectiveNow()}
 function todayStr(){return effectiveNow().toLocaleDateString('en-CA')}
-function eveningTodayStr(){return effectiveEveningNow().toLocaleDateString('en-CA')}
+function eveningTodayStr(){return todayStr()}
 function dow(){return effectiveNow().getDay()}
 function eveningDow(){return effectiveEveningNow().getDay()}
 function isSchoolDay(){const d=dow();return d>=0&&d<=4}
@@ -1101,7 +1097,8 @@ function renderMatchView(){
 }
 
 function generateMatch(kid){
-  const team=S[kid].team;
+  const c=ctx();
+  const team=S[kid][c.tm];
   const players=team.map(t=>({...getPlayerById(t.playerId),fPos:t.pos})).filter(Boolean);
   const gk=players.find(p=>p.pos==='GK');
   const fwds=players.filter(p=>p.pos==='FWD');
@@ -1199,7 +1196,8 @@ let matchEvents=[],matchTimer=null;
 
 function startMatch(){
   const kid=S.currentKid;
-  if(S[kid].team.length<11){autoFillTeam(kid);save()}
+  const c=ctx();
+  if(S[kid][c.tm].length<11){autoFillTeam(kid);save()}
   matchEvents=generateMatch(kid);
   S.view='match';
   render();
@@ -1422,6 +1420,12 @@ function bindEvents(){
       const isLeg=S._legendarySwap;
       const entry=S[kid][c.tm].find(t=>t.pos===pos);
       if(!entry)return;
+      // Check availability BEFORE removing player, so swap isn't wasted
+      if(isLeg){
+        const taken=new Set(S[kid][c.tm].filter(t=>t.pos!==pos).map(t=>t.playerId));
+        const available=LEGENDS.map(id=>PLAYERS.find(p=>p.id===id)).filter(p=>p&&!taken.has(p.id));
+        if(available.length===0){S._swapMode=false;S._swapKid=null;S._legendarySwap=false;render();return}
+      }
       S[kid][c.tm]=S[kid][c.tm].filter(t=>t.pos!==pos);
       if(isLeg){S[kid][c.lsw]--}else{S[kid][c.sw]--}
       S._swapMode=false;
@@ -1430,13 +1434,10 @@ function bindEvents(){
       S.currentKid=kid;
       save();
       if(isLeg){
-        // Legendary swap: show 3 random legends
         const taken=new Set(S[kid][c.tm].map(t=>t.playerId));
         const available=LEGENDS.map(id=>PLAYERS.find(p=>p.id===id)).filter(p=>p&&!taken.has(p.id));
         const options=available.sort(()=>Math.random()-.5).slice(0,3);
-        if(options.length>0){
-          showDraft({pos,label:POS_LABELS[pos],index:-1},options);
-        }else{render()}
+        showDraft({pos,label:POS_LABELS[pos],index:-1},options);
       }else{
         const gp=POS_MAP[pos];
         const options=getDraftOptions(kid,gp);
