@@ -267,29 +267,31 @@ body{
 .player-card.rarity-2{background:linear-gradient(135deg,var(--epic1),var(--epic2))}
 .player-card.rarity-1{background:linear-gradient(135deg,var(--rare1),var(--rare2))}
 .player-card.rarity-0{background:linear-gradient(135deg,var(--common1),var(--common2))}
-.pc-top{display:flex;justify-content:space-between;width:100%;font-size:10px;font-weight:700;margin-bottom:4px}
-.pc-rating{font-size:20px;font-weight:900;line-height:1}
-.pc-pos{font-size:9px;opacity:.8;margin-top:1px}
+.pc-top{display:flex;justify-content:space-between;align-items:flex-start;width:100%;font-weight:700;margin-bottom:2px}
+.pc-left{display:flex;flex-direction:column;align-items:center;min-width:28px}
+.pc-rating{font-size:22px;font-weight:900;line-height:1;color:#FFD600}
+.pc-pos{font-size:8px;opacity:.85;margin-top:1px;font-weight:700}
+.pc-country{font-size:13px;margin-top:1px;line-height:1}
+.pc-right{display:flex;flex-direction:column;align-items:center;min-width:28px}
+.pc-stars{font-size:9px;line-height:1}
 .pc-photo{
-  width:72px;height:72px;border-radius:50%;object-fit:cover;
+  width:62px;height:62px;border-radius:50%;object-fit:cover;
   border:3px solid rgba(255,255,255,.6);box-shadow:0 2px 8px rgba(0,0,0,.3);
 }
 .pc-photo-placeholder{
-  width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.15);
+  width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.15);
   display:flex;align-items:center;justify-content:center;
-  font-size:28px;font-weight:900;border:3px solid rgba(255,255,255,.4);
+  font-size:24px;font-weight:900;border:3px solid rgba(255,255,255,.4);
 }
-.pc-name{font-size:14px;font-weight:800;margin-top:4px}
+.pc-name{font-size:12px;font-weight:800;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
 .pc-team{font-size:9px;opacity:.7;display:flex;align-items:center;gap:3px;margin-top:1px}
 .pc-team-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.pc-stars{font-size:9px;margin-top:1px}
-.pc-stats-row{display:flex;gap:4px;margin-top:4px;justify-content:center}
-.pc-stat{font-size:8px;font-weight:700;text-align:center;padding:2px 6px;border-radius:4px;color:#fff;line-height:1.1}
+.pc-stats-row{display:flex;gap:3px;margin-top:auto;justify-content:center;padding-top:3px}
+.pc-stat{font-size:7px;font-weight:700;text-align:center;padding:2px 5px;border-radius:4px;color:#fff;line-height:1.1}
 .pc-stat span{display:block;font-size:13px;font-weight:900}
 .pc-stat-atk{background:#D32F2F}
 .pc-stat-def{background:#1565C0}
 .pc-stat-ovr{background:#E6A200}
-.pc-ovr{color:#FFD600}
 .bench-row{display:flex;justify-content:center;gap:12px;padding:10px 14px;background:rgba(0,0,0,.15);border-radius:0 0 16px 16px;margin:-8px 14px 0}
 .bench-slot{text-align:center;flex:0 0 60px}
 .bench-slot .slot-label{font-size:10px;color:rgba(255,255,255,.7)}
@@ -327,10 +329,11 @@ body{
 .wc-select-card{height:115px;border-radius:10px;overflow:hidden;cursor:pointer;transition:.2s;border:2px solid transparent}
 .wc-select-card:active{transform:scale(.95)}
 .wc-select-card .player-card{padding:4px 3px 3px;height:100%}
-.wc-select-card .pc-top{margin-bottom:1px}
-.wc-select-card .pc-rating{font-size:14px}
-.wc-select-card .pc-pos{font-size:7px}
-.wc-select-card .pc-photo,.wc-select-card .pc-photo-placeholder{width:32px;height:32px;font-size:13px;border-width:2px}
+.wc-select-card .pc-top{margin-bottom:0}
+.wc-select-card .pc-rating{font-size:13px}
+.wc-select-card .pc-pos{font-size:6px}
+.wc-select-card .pc-country{font-size:10px}
+.wc-select-card .pc-photo,.wc-select-card .pc-photo-placeholder{width:30px;height:30px;font-size:12px;border-width:2px}
 .wc-select-card .pc-name{font-size:8px;margin-top:1px}
 .wc-select-card .pc-stats-row{gap:2px;margin-top:1px}
 .wc-select-card .pc-stat{font-size:5px;padding:1px 3px}
@@ -1182,8 +1185,8 @@ function renderPlayerCard(p){
   const photo=PLAYER_PHOTOS[p.id];
   return `<div class="player-card rarity-${p.rarity}">
     <div class="pc-top">
-      <div><div class="pc-rating pc-ovr">${p.ovr}</div><div class="pc-pos">${posLabel(p.pos)}</div></div>
-      <div><span style="font-size:14px">${p.country}</span> <span class="pc-stars">${RARITY_STARS[p.rarity]}</span></div>
+      <div class="pc-left"><div class="pc-rating">${p.ovr}</div><div class="pc-pos">${posLabel(p.pos)}</div><div class="pc-country">${p.country}</div></div>
+      <div class="pc-right"><span class="pc-stars">${RARITY_STARS[p.rarity]}</span></div>
     </div>
     ${photo?`<img class="pc-photo" src="${photo}" alt="${p.name}">`:`<div class="pc-photo-placeholder">${p.num}</div>`}
     <div class="pc-name">${p.name}</div>
@@ -1346,8 +1349,8 @@ function renderBattleCard(p){
   const photo=PLAYER_PHOTOS[p.id];
   return `<div class="player-card rarity-${p.rarity}" style="height:100%">
     <div class="pc-top">
-      <div><div class="pc-rating pc-ovr">${p.ovr}</div><div class="pc-pos">${posLabel(p.pos)}</div></div>
-      <div><span style="font-size:14px">${p.country}</span></div>
+      <div class="pc-left"><div class="pc-rating">${p.ovr}</div><div class="pc-pos">${posLabel(p.pos)}</div><div class="pc-country">${p.country}</div></div>
+      <div class="pc-right"></div>
     </div>
     ${photo?`<img class="pc-photo" src="${photo}" alt="${p.name}">`:`<div class="pc-photo-placeholder">${p.num}</div>`}
     <div class="pc-name">${p.name}</div>
