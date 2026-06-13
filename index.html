@@ -698,12 +698,12 @@ function checkResets(){
           S[k].history.unshift({team:[...S[k].team],date:S.weekStart||today});
           if(S[k].history.length>8)S[k].history.pop();
         }
-        S[k].team=[];
+        S[k].team=[];S[k].teamMatch=false;
         if(S[k].evTeam.length>0){
           S[k].evHistory.unshift({team:[...S[k].evTeam],date:S.weekStart||today});
           if(S[k].evHistory.length>8)S[k].evHistory.pop();
         }
-        S[k].evTeam=[];
+        S[k].evTeam=[];S[k].evTeamMatch=false;
       });
       S.weekStart=today;
     }
@@ -962,7 +962,8 @@ function renderTeamForKid(kid){
     }
   }
 
-  if(isComplete||isShabat&&team.length>=TEAM_SIZE){
+  const tasksAllDone=doneCount(kid)>=getTasks(kid).length;
+  if(isShabat&&tasksAllDone&&team.length>=TEAM_SIZE&&!S[kid][c.tm+'Match']){
     html+=`<button class="match-btn" data-match-kid="${kid}">⚽ אתגר את המחשב!</button>`;
   }
 
@@ -1446,8 +1447,12 @@ function nextMatchRound(){
 function showMatchFinal(){
   const m=wcMatch;
   const kid=S.currentKid;
+  const c=ctx();
   const win=m.homeScore>m.awayScore;
   const tie=m.homeScore===m.awayScore;
+  // Mark match as played for this session — no replay until next week
+  S[kid][c.tm+'Match']=true;
+  save();
   showConfetti(win);
   let transferHtml='';
   if(m.gained.length){
@@ -1466,7 +1471,7 @@ function showMatchFinal(){
     <div class="wc-final-score">${m.homeScore} - ${m.awayScore}</div>
     <div class="wc-final-text">${win?`${KIDS[kid].name} ניצח!`:tie?'תיקו!':'הפעם הבאה!'}</div>
     ${transferHtml}
-    <button class="wc-final-btn" id="wc-done">${win?'🎉 יאללה!':'💪 עוד פעם!'}</button>
+    <button class="wc-final-btn" id="wc-done">סיום</button>
   `;
   document.body.appendChild(overlay);
   overlay.querySelector('#wc-done').addEventListener('click',()=>{
