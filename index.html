@@ -146,6 +146,11 @@ body{
 }
 .slot.swappable{cursor:pointer}
 .slot.swappable .slot-filled{animation:pulse 1.2s infinite}
+.bench-slot{cursor:pointer;transition:.2s;border-radius:10px;padding:4px}
+.bench-slot:active{transform:scale(.93)}
+.bench-slot.bench-selected{background:rgba(255,180,0,.35);box-shadow:0 0 0 2px var(--gold);animation:pulse 1.2s infinite}
+.bench-swap-target{cursor:pointer}
+.bench-swap-target .slot-filled,.bench-swap-target .slot-empty{box-shadow:0 0 12px 3px rgba(255,180,0,.5);border-radius:50%}
 
 .team-preview{padding:12px 14px}
 .team-preview-title{font-size:15px;font-weight:700;color:var(--text2);margin-bottom:8px;text-align:center}
@@ -930,7 +935,9 @@ function renderTeamForKid(kid){
   html+=renderPitch(kid,hl,swapMode);
   html+=renderBench(kid,swapMode);
 
-  if(swapMode){
+  if(S._benchSwapKid===kid&&S._benchSwapPos){
+    html+=`<div class="swap-hint">בחר מקום במגרש להחלפה</div>`;
+  }else if(swapMode){
     html+=`<div class="swap-hint">לחץ על שחקן להחלפה</div>`;
   }else{
     if(S[kid][c.lsw]>0&&team.length>0){
@@ -991,15 +998,17 @@ function renderPitch(kid,highlightPos,swapMode){
   const team=S[kid][c.tm];
   const byPos={};
   team.forEach(t=>{byPos[t.pos]=getPlayerById(t.playerId)});
+  const benchSwapActive=S._benchSwapKid===kid&&S._benchSwapPos;
 
   let slots='';
   Object.entries(FORMATION_POS).forEach(([pos,coord])=>{
     const p=byPos[pos];
+    const bst=benchSwapActive?' bench-swap-target':'';
     if(p){
       const ph=PLAYER_PHOTOS[p.id];
       const hl=pos===highlightPos?' just-drafted':'';
       const sw=swapMode?' swappable':'';
-      slots+=`<div class="slot pop${hl}${sw}" style="left:${coord.l}%;top:${coord.t}%" ${swapMode?`data-swap-pos="${pos}"`:''}>
+      slots+=`<div class="slot pop${hl}${sw}${bst}" style="left:${coord.l}%;top:${coord.t}%" ${swapMode?`data-swap-pos="${pos}"`:''} ${benchSwapActive?`data-bench-target="${pos}"`:''}>
         <div class="slot-filled">
           ${ph?`<img class="slot-photo" src="${ph}" alt="${p.name}" style="border-color:${rarityColor(p.rarity)}">`:`<div class="slot-photo-placeholder" style="border-color:${rarityColor(p.rarity)}">${p.num}</div>`}
           <div class="slot-name">${p.name}</div>
@@ -1007,7 +1016,7 @@ function renderPitch(kid,highlightPos,swapMode){
         <div class="slot-label">${POS_LABELS[pos]}</div>
       </div>`;
     }else{
-      slots+=`<div class="slot" style="left:${coord.l}%;top:${coord.t}%">
+      slots+=`<div class="slot${bst}" style="left:${coord.l}%;top:${coord.t}%" ${benchSwapActive?`data-bench-target="${pos}"`:''}>
         <div class="slot-empty"><span style="font-size:14px;color:rgba(255,255,255,.3)">?</span></div>
         <div class="slot-label">${POS_LABELS[pos]}</div>
       </div>`;
@@ -1032,6 +1041,7 @@ function renderBench(kid,swapMode){
   const c=ctx();
   const team=S[kid][c.tm];
   const benchPositions=['BENCH1','BENCH2','BENCH3'];
+  const selectedBench=S._benchSwapKid===kid?S._benchSwapPos:null;
   let slots=benchPositions.map(pos=>{
     const entry=team.find(t=>t.pos===pos);
     if(entry){
@@ -1039,7 +1049,8 @@ function renderBench(kid,swapMode){
       if(!p)return '';
       const photo=PLAYER_PHOTOS[p.id];
       const sw=swapMode?` data-swap-pos="${pos}"`:'';
-      return `<div class="bench-slot"${sw}>
+      const sel=selectedBench===pos?' bench-selected':'';
+      return `<div class="bench-slot${sel}"${sw} data-bench-pick="${pos}">
         ${photo?`<img src="${photo}" style="width:40px;height:40px;border-radius:50%;border:2px solid ${rarityColor(p.rarity)}">`
         :`<div style="width:40px;height:40px;border-radius:50%;background:${rarityColor(p.rarity)};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px">${p.num}</div>`}
         <div style="font-size:10px;font-weight:700;margin-top:2px">${p.name}</div>
@@ -1620,6 +1631,39 @@ function bindEvents(){
           showDraft({pos,label:POS_LABELS[pos],index:-1});
         }else{render()}
       }
+    });
+  });
+
+  // Bench-formation swap: click bench player to select, then click formation slot to swap
+  document.querySelectorAll('[data-bench-pick]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const pos=el.dataset.benchPick;
+      const kid=S.currentKid;
+      if(S._benchSwapKid===kid&&S._benchSwapPos===pos){
+        // Deselect
+        S._benchSwapKid=null;S._benchSwapPos=null;
+      }else{
+        S._benchSwapKid=kid;S._benchSwapPos=pos;
+      }
+      render();
+    });
+  });
+  document.querySelectorAll('[data-bench-target]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const targetPos=el.dataset.benchTarget;
+      const kid=S._benchSwapKid;
+      const benchPos=S._benchSwapPos;
+      if(!kid||!benchPos)return;
+      const c=ctx();
+      const team=S[kid][c.tm];
+      const benchEntry=team.find(t=>t.pos===benchPos);
+      const targetEntry=team.find(t=>t.pos===targetPos);
+      if(!benchEntry)return;
+      // Swap positions
+      benchEntry.pos=targetPos;
+      if(targetEntry)targetEntry.pos=benchPos;
+      S._benchSwapKid=null;S._benchSwapPos=null;
+      save();render();
     });
   });
 
