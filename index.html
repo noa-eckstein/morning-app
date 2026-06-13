@@ -344,19 +344,19 @@ body{
 .wc-battle-stat-label{font-size:11px;font-weight:700;color:rgba(255,255,255,.5);padding:2px 12px;border-radius:8px;display:inline-block}
 .wc-select-area{flex:1;min-height:0;display:flex;flex-direction:column;background:rgba(0,0,0,.25);border-radius:16px 16px 0 0;padding:6px 0}
 .wc-select-title{text-align:center;font-size:14px;color:rgba(255,255,255,.7);padding:4px;font-weight:700}
-.wc-select-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:6px 10px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0;align-content:start}
-.wc-select-card{height:115px;border-radius:10px;overflow:hidden;cursor:pointer;transition:.2s;border:2px solid transparent}
+.wc-select-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:6px 10px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0;align-content:start}
+.wc-select-card{height:150px;border-radius:10px;overflow:hidden;cursor:pointer;transition:.2s;border:2px solid transparent}
 .wc-select-card:active{transform:scale(.95)}
-.wc-select-card .player-card{padding:4px 3px 3px;height:100%}
-.wc-select-card .pc-top{margin-bottom:0}
-.wc-select-card .pc-rating{font-size:13px}
-.wc-select-card .pc-pos{font-size:6px}
-.wc-select-card .pc-country{font-size:10px}
-.wc-select-card .pc-photo,.wc-select-card .pc-photo-placeholder{width:30px;height:30px;font-size:12px;border-width:2px}
-.wc-select-card .pc-name{font-size:8px;margin-top:1px}
-.wc-select-card .pc-stats-row{gap:2px;margin-top:1px}
-.wc-select-card .pc-stat{font-size:5px;padding:1px 3px}
-.wc-select-card .pc-stat span{font-size:9px}
+.wc-select-card .player-card{padding:5px 4px 4px;height:100%}
+.wc-select-card .pc-top{margin-bottom:1px}
+.wc-select-card .pc-rating{font-size:16px}
+.wc-select-card .pc-pos{font-size:7px}
+.wc-select-card .pc-country{font-size:12px}
+.wc-select-card .pc-photo,.wc-select-card .pc-photo-placeholder{width:44px;height:44px;font-size:16px;border-width:2px}
+.wc-select-card .pc-name{font-size:10px;margin-top:2px}
+.wc-select-card .pc-stats-row{gap:3px;margin-top:2px}
+.wc-select-card .pc-stat{font-size:6px;padding:2px 4px}
+.wc-select-card .pc-stat span{font-size:11px}
 .wc-select-card .pc-stars,.wc-select-card .pc-team{display:none}
 .wc-highlight-atk .wc-select-card .pc-stat-atk{transform:scale(1.2);outline:1.5px solid rgba(255,255,255,.9);border-radius:4px}
 .wc-highlight-def .wc-select-card .pc-stat-def{transform:scale(1.2);outline:1.5px solid rgba(255,255,255,.9);border-radius:4px}
@@ -1023,7 +1023,7 @@ function renderPitch(kid,highlightPos,swapMode){
       const hl=pos===highlightPos?' just-drafted':'';
       const sw=swapMode?' swappable':'';
       const canTap=!swapMode&&!benchSwapActive;
-      slots+=`<div class="slot pop${hl}${sw}${bst}" style="left:${coord.l}%;top:${coord.t}%" ${swapMode?`data-swap-pos="${pos}"`:''} ${benchSwapActive?`data-bench-target="${pos}"`:''} ${canTap?`data-show-card="${p.id}"`:''}>
+      slots+=`<div class="slot${hl?' pop':''}${hl}${sw}${bst}" style="left:${coord.l}%;top:${coord.t}%" ${swapMode?`data-swap-pos="${pos}"`:''} ${benchSwapActive?`data-bench-target="${pos}" data-kid="${kid}"`:''} ${canTap?`data-show-card="${p.id}"`:''}>
         <div class="slot-filled">
           ${ph?`<img class="slot-photo" src="${ph}" alt="${p.name}" style="border-color:${rarityColor(p.rarity)}">`:`<div class="slot-photo-placeholder" style="border-color:${rarityColor(p.rarity)}">${p.num}</div>`}
           <div class="slot-name">${p.name}</div>
@@ -1031,7 +1031,7 @@ function renderPitch(kid,highlightPos,swapMode){
         <div class="slot-label">${POS_LABELS[pos]}</div>
       </div>`;
     }else{
-      slots+=`<div class="slot${bst}" style="left:${coord.l}%;top:${coord.t}%" ${benchSwapActive?`data-bench-target="${pos}"`:''}>
+      slots+=`<div class="slot${bst}" style="left:${coord.l}%;top:${coord.t}%" ${benchSwapActive?`data-bench-target="${pos}" data-kid="${kid}"`:''}>
         <div class="slot-empty"><span style="font-size:14px;color:rgba(255,255,255,.3)">?</span></div>
         <div class="slot-label">${POS_LABELS[pos]}</div>
       </div>`;
@@ -1065,7 +1065,7 @@ function renderBench(kid,swapMode){
       const photo=PLAYER_PHOTOS[p.id];
       const sw=swapMode?` data-swap-pos="${pos}"`:'';
       const sel=selectedBench===pos?' bench-selected':'';
-      return `<div class="bench-slot${sel}"${sw} data-bench-pick="${pos}">
+      return `<div class="bench-slot${sel}"${sw} data-bench-pick="${pos}" data-kid="${kid}">
         ${photo?`<img src="${photo}" style="width:40px;height:40px;border-radius:50%;border:2px solid ${rarityColor(p.rarity)}">`
         :`<div style="width:40px;height:40px;border-radius:50%;background:${rarityColor(p.rarity)};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px">${p.num}</div>`}
         <div style="font-size:10px;font-weight:700;margin-top:2px">${p.name}</div>
@@ -1396,14 +1396,35 @@ function pickMatchPlayer(playerId){
   if(!homePick)return;
   const awayPick=getComputerPick(ri,m.usedAway,m.computerTeam);
   if(!awayPick)return;
-  // Mark both as used only after both picks succeed
   m.homePick=homePick;
   m.usedHome.add(playerId);
   m.awayPick=awayPick;
   m.usedAway.add(awayPick.id);
   const stat=ri.stat;
-  if(homePick[stat]>awayPick[stat])m.homeScore++;
-  else if(awayPick[stat]>homePick[stat])m.awayScore++;
+  const kid=S.currentKid;
+  const c=ctx();
+  const team=S[kid][c.tm];
+  if(homePick[stat]>awayPick[stat]){
+    // Win — gain the computer's player, replacing yours in same position
+    m.homeScore++;
+    const entry=team.find(t=>t.playerId===playerId);
+    if(entry&&!team.some(t=>t.playerId===awayPick.id)){
+      entry.playerId=awayPick.id;
+      save();
+    }
+  }else if(awayPick[stat]>homePick[stat]){
+    // Lose — lose your player, replace with a random available one
+    m.awayScore++;
+    const entry=team.find(t=>t.playerId===playerId);
+    if(entry){
+      const taken=new Set(team.map(t=>t.playerId));
+      const pool=PLAYERS.filter(p=>!LEGENDS.includes(p.id)&&!taken.has(p.id));
+      if(pool.length){
+        entry.playerId=pool[Math.floor(Math.random()*pool.length)].id;
+      }
+      save();
+    }
+  }
   m.phase='battle';
   render();
   if(homePick[stat]>awayPick[stat])setTimeout(()=>showConfetti(false),300);
@@ -1653,9 +1674,9 @@ function bindEvents(){
   document.querySelectorAll('[data-bench-pick]').forEach(el=>{
     el.addEventListener('click',()=>{
       const pos=el.dataset.benchPick;
-      const kid=S.currentKid;
+      const kid=el.dataset.kid;
+      if(!kid)return;
       if(S._benchSwapKid===kid&&S._benchSwapPos===pos){
-        // Deselect
         S._benchSwapKid=null;S._benchSwapPos=null;
       }else{
         S._benchSwapKid=kid;S._benchSwapPos=pos;
@@ -1666,15 +1687,16 @@ function bindEvents(){
   document.querySelectorAll('[data-bench-target]').forEach(el=>{
     el.addEventListener('click',()=>{
       const targetPos=el.dataset.benchTarget;
-      const kid=S._benchSwapKid;
+      const kid=el.dataset.kid;
+      if(!kid)return;
+      if(S._benchSwapKid!==kid)return; // only swap within same kid
       const benchPos=S._benchSwapPos;
-      if(!kid||!benchPos)return;
+      if(!benchPos)return;
       const c=ctx();
       const team=S[kid][c.tm];
       const benchEntry=team.find(t=>t.pos===benchPos);
       const targetEntry=team.find(t=>t.pos===targetPos);
       if(!benchEntry)return;
-      // Swap positions
       benchEntry.pos=targetPos;
       if(targetEntry)targetEntry.pos=benchPos;
       S._benchSwapKid=null;S._benchSwapPos=null;
