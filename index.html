@@ -298,8 +298,8 @@ body{
 .pc-stat-def{background:#1565C0}
 .pc-stat-ovr{background:#E6A200}
 /* Player card popup */
-.card-popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;animation:fadeIn .2s}
-.card-popup-card{width:180px;height:260px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:popIn .25s ease-out}
+.card-popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;animation:cardFade .2s}
+.card-popup-card{width:180px;height:260px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:cardZoom .25s ease-out}
 .card-popup-card .pc-rating{font-size:28px}
 .card-popup-card .pc-pos{font-size:10px}
 .card-popup-card .pc-country{font-size:16px}
@@ -309,8 +309,8 @@ body{
 .card-popup-card .pc-stat{font-size:8px;padding:3px 7px}
 .card-popup-card .pc-stat span{font-size:15px}
 .card-popup-card .pc-stars{font-size:11px}
-@keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes cardZoom{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes cardFade{from{opacity:0}to{opacity:1}}
 .bench-row{display:flex;justify-content:center;gap:12px;padding:10px 14px;background:rgba(0,0,0,.15);border-radius:0 0 16px 16px;margin:-8px 14px 0}
 .bench-slot{text-align:center;flex:0 0 60px}
 .bench-slot .slot-label{font-size:10px;color:rgba(255,255,255,.7)}
