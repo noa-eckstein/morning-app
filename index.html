@@ -311,7 +311,7 @@ body{
 .card-popup-card .pc-stars{font-size:11px}
 @keyframes cardZoom{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes cardFade{from{opacity:0}to{opacity:1}}
-.bench-row{display:flex;justify-content:center;gap:12px;padding:10px 14px;background:rgba(0,0,0,.15);border-radius:0 0 16px 16px;margin:-8px 14px 0}
+.bench-row{display:flex;justify-content:center;gap:12px;padding:10px 14px;background:rgba(0,0,0,.15);border-radius:0 0 16px 16px;margin:-8px 14px 0;flex-wrap:wrap}
 .bench-slot{text-align:center;flex:0 0 60px}
 .bench-slot .slot-label{font-size:10px;color:rgba(255,255,255,.7)}
 
@@ -1055,29 +1055,36 @@ function rarityColor(r){return['#66BB6A','#42A5F5','#CE93D8','#FFB300'][r]||'#ff
 function renderBench(kid,swapMode){
   const c=ctx();
   const team=S[kid][c.tm];
-  const benchPositions=['BENCH1','BENCH2','BENCH3'];
+  // Collect all bench entries + ensure at least 3 empty slots
+  const benchEntries=team.filter(t=>t.pos.startsWith('BENCH')).sort((a,b)=>{
+    const na=parseInt(a.pos.replace('BENCH',''))||0;
+    const nb=parseInt(b.pos.replace('BENCH',''))||0;
+    return na-nb;
+  });
+  const minSlots=3;
   const selectedBench=S._benchSwapKid===kid?S._benchSwapPos:null;
-  let slots=benchPositions.map(pos=>{
-    const entry=team.find(t=>t.pos===pos);
-    if(entry){
-      const p=getPlayerById(entry.playerId);
-      if(!p)return '';
-      const photo=PLAYER_PHOTOS[p.id];
-      const sw=swapMode?` data-swap-pos="${pos}"`:'';
-      const sel=selectedBench===pos?' bench-selected':'';
-      return `<div class="bench-slot${sel}"${sw} data-bench-pick="${pos}" data-kid="${kid}">
-        ${photo?`<img src="${photo}" style="width:40px;height:40px;border-radius:50%;border:2px solid ${rarityColor(p.rarity)}">`
-        :`<div style="width:40px;height:40px;border-radius:50%;background:${rarityColor(p.rarity)};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px">${p.num}</div>`}
-        <div style="font-size:10px;font-weight:700;margin-top:2px">${p.name}</div>
-        <div class="slot-label">ספסל</div>
-      </div>`;
-    }else{
-      return `<div class="bench-slot">
-        <div style="width:40px;height:40px;border-radius:50%;border:2px dashed rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.3);font-size:16px">?</div>
-        <div class="slot-label">ספסל</div>
-      </div>`;
-    }
-  }).join('');
+  let slots='';
+  benchEntries.forEach(entry=>{
+    const p=getPlayerById(entry.playerId);
+    if(!p)return;
+    const photo=PLAYER_PHOTOS[p.id];
+    const pos=entry.pos;
+    const sw=swapMode?` data-swap-pos="${pos}"`:'';
+    const sel=selectedBench===pos?' bench-selected':'';
+    slots+=`<div class="bench-slot${sel}"${sw} data-bench-pick="${pos}" data-kid="${kid}">
+      ${photo?`<img src="${photo}" style="width:40px;height:40px;border-radius:50%;border:2px solid ${rarityColor(p.rarity)}">`
+      :`<div style="width:40px;height:40px;border-radius:50%;background:${rarityColor(p.rarity)};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px">${p.num}</div>`}
+      <div style="font-size:10px;font-weight:700;margin-top:2px">${p.name}</div>
+      <div class="slot-label">ספסל</div>
+    </div>`;
+  });
+  // Fill empty slots up to minSlots
+  for(let i=benchEntries.length;i<minSlots;i++){
+    slots+=`<div class="bench-slot">
+      <div style="width:40px;height:40px;border-radius:50%;border:2px dashed rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.3);font-size:16px">?</div>
+      <div class="slot-label">ספסל</div>
+    </div>`;
+  }
   return `<div class="bench-row">${slots}</div>`;
 }
 
@@ -1273,6 +1280,7 @@ function startMatch(){
     round:0,
     rounds:generateMatchRounds(),
     homeScore:0,awayScore:0,
+    gained:[],lost:[],
     usedHome:new Set(),usedAway:new Set(),
     computerTeam:generateComputerTeam(kid),
     phase:'pick',homePick:null,awayPick:null,
@@ -1405,25 +1413,20 @@ function pickMatchPlayer(playerId){
   const c=ctx();
   const team=S[kid][c.tm];
   if(homePick[stat]>awayPick[stat]){
-    // Win — gain the computer's player, replacing yours in same position
+    // Win — add computer's player to bench
     m.homeScore++;
-    const entry=team.find(t=>t.playerId===playerId);
-    if(entry&&!team.some(t=>t.playerId===awayPick.id)){
-      entry.playerId=awayPick.id;
+    if(!team.some(t=>t.playerId===awayPick.id)){
+      const benchNums=team.filter(t=>t.pos.startsWith('BENCH')).map(t=>parseInt(t.pos.replace('BENCH',''))||0);
+      const nextBench='BENCH'+(Math.max(0,...benchNums)+1);
+      team.push({playerId:awayPick.id,pos:nextBench,day:-1});
+      m.gained.push(awayPick);
       save();
     }
   }else if(awayPick[stat]>homePick[stat]){
-    // Lose — lose your player, replace with a random available one
+    // Lose — remove your player from the team
     m.awayScore++;
-    const entry=team.find(t=>t.playerId===playerId);
-    if(entry){
-      const taken=new Set(team.map(t=>t.playerId));
-      const pool=PLAYERS.filter(p=>!LEGENDS.includes(p.id)&&!taken.has(p.id));
-      if(pool.length){
-        entry.playerId=pool[Math.floor(Math.random()*pool.length)].id;
-      }
-      save();
-    }
+    const idx=team.findIndex(t=>t.playerId===playerId);
+    if(idx>=0){team.splice(idx,1);m.lost.push(homePick);save()}
   }
   m.phase='battle';
   render();
@@ -1446,12 +1449,23 @@ function showMatchFinal(){
   const win=m.homeScore>m.awayScore;
   const tie=m.homeScore===m.awayScore;
   showConfetti(win);
+  let transferHtml='';
+  if(m.gained.length){
+    transferHtml+=`<div style="margin-top:8px;font-size:13px;color:#4CAF50;font-weight:700">✅ הרווחת: ${m.gained.map(p=>p.name).join(', ')}</div>`;
+  }
+  if(m.lost.length){
+    transferHtml+=`<div style="margin-top:4px;font-size:13px;color:#EF5350;font-weight:700">❌ הפסדת: ${m.lost.map(p=>p.name).join(', ')}</div>`;
+  }
+  if(!m.gained.length&&!m.lost.length){
+    transferHtml=`<div style="margin-top:8px;font-size:13px;color:rgba(255,255,255,.6)">אין שינויים בנבחרת</div>`;
+  }
   const overlay=document.createElement('div');
   overlay.className='wc-final';
   overlay.innerHTML=`
     <div class="wc-final-emoji">${win?'🏆':tie?'🤝':'😤'}</div>
     <div class="wc-final-score">${m.homeScore} - ${m.awayScore}</div>
     <div class="wc-final-text">${win?`${KIDS[kid].name} ניצח!`:tie?'תיקו!':'הפעם הבאה!'}</div>
+    ${transferHtml}
     <button class="wc-final-btn" id="wc-done">${win?'🎉 יאללה!':'💪 עוד פעם!'}</button>
   `;
   document.body.appendChild(overlay);
