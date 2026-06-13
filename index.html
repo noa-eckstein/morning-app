@@ -264,15 +264,15 @@ body{
 .card-front{transform:rotateY(180deg)}
 
 .player-card{
-  width:100%;height:100%;border-radius:14px;padding:8px 6px 6px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  color:#fff;text-shadow:1px 1px 2px rgba(0,0,0,.3);position:relative;
+  width:100%;height:100%;border-radius:14px;padding:6px 6px 5px;
+  display:flex;flex-direction:column;align-items:center;
+  color:#fff;text-shadow:1px 1px 2px rgba(0,0,0,.3);position:relative;overflow:hidden;
 }
 .player-card.rarity-3{background:linear-gradient(135deg,var(--legendary1),var(--legendary2))}
 .player-card.rarity-2{background:linear-gradient(135deg,var(--epic1),var(--epic2))}
 .player-card.rarity-1{background:linear-gradient(135deg,var(--rare1),var(--rare2))}
 .player-card.rarity-0{background:linear-gradient(135deg,var(--common1),var(--common2))}
-.pc-top{display:flex;justify-content:space-between;align-items:flex-start;width:100%;font-weight:700;margin-bottom:2px}
+.pc-top{display:flex;justify-content:space-between;align-items:flex-start;width:100%;font-weight:700;margin-bottom:2px;flex-shrink:0}
 .pc-left{display:flex;flex-direction:column;align-items:center;min-width:28px}
 .pc-rating{font-size:22px;font-weight:900;line-height:1;color:#FFD600}
 .pc-pos{font-size:8px;opacity:.85;margin-top:1px;font-weight:700}
@@ -280,23 +280,37 @@ body{
 .pc-right{display:flex;flex-direction:column;align-items:center;min-width:28px}
 .pc-stars{font-size:9px;line-height:1}
 .pc-photo{
-  width:62px;height:62px;border-radius:50%;object-fit:cover;
-  border:3px solid rgba(255,255,255,.6);box-shadow:0 2px 8px rgba(0,0,0,.3);
+  width:56px;height:56px;border-radius:50%;object-fit:cover;
+  border:3px solid rgba(255,255,255,.6);box-shadow:0 2px 8px rgba(0,0,0,.3);flex-shrink:0;
 }
 .pc-photo-placeholder{
-  width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.15);
+  width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.15);
   display:flex;align-items:center;justify-content:center;
-  font-size:24px;font-weight:900;border:3px solid rgba(255,255,255,.4);
+  font-size:24px;font-weight:900;border:3px solid rgba(255,255,255,.4);flex-shrink:0;
 }
-.pc-name{font-size:12px;font-weight:800;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
+.pc-name{font-size:11px;font-weight:800;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;flex-shrink:0}
 .pc-team{font-size:9px;opacity:.7;display:flex;align-items:center;gap:3px;margin-top:1px}
 .pc-team-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.pc-stats-row{display:flex;gap:3px;margin-top:auto;justify-content:center;padding-top:3px}
+.pc-stats-row{display:flex;gap:3px;margin-top:auto;justify-content:center;padding-top:2px;flex-shrink:0}
 .pc-stat{font-size:7px;font-weight:700;text-align:center;padding:2px 5px;border-radius:4px;color:#fff;line-height:1.1}
 .pc-stat span{display:block;font-size:13px;font-weight:900}
 .pc-stat-atk{background:#D32F2F}
 .pc-stat-def{background:#1565C0}
 .pc-stat-ovr{background:#E6A200}
+/* Player card popup */
+.card-popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;animation:fadeIn .2s}
+.card-popup-card{width:180px;height:260px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:popIn .25s ease-out}
+.card-popup-card .pc-rating{font-size:28px}
+.card-popup-card .pc-pos{font-size:10px}
+.card-popup-card .pc-country{font-size:16px}
+.card-popup-card .pc-photo,.card-popup-card .pc-photo-placeholder{width:72px;height:72px;font-size:28px}
+.card-popup-card .pc-name{font-size:14px;margin-top:4px}
+.card-popup-card .pc-stats-row{gap:4px;padding-top:4px}
+.card-popup-card .pc-stat{font-size:8px;padding:3px 7px}
+.card-popup-card .pc-stat span{font-size:15px}
+.card-popup-card .pc-stars{font-size:11px}
+@keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .bench-row{display:flex;justify-content:center;gap:12px;padding:10px 14px;background:rgba(0,0,0,.15);border-radius:0 0 16px 16px;margin:-8px 14px 0}
 .bench-slot{text-align:center;flex:0 0 60px}
 .bench-slot .slot-label{font-size:10px;color:rgba(255,255,255,.7)}
@@ -1008,7 +1022,8 @@ function renderPitch(kid,highlightPos,swapMode){
       const ph=PLAYER_PHOTOS[p.id];
       const hl=pos===highlightPos?' just-drafted':'';
       const sw=swapMode?' swappable':'';
-      slots+=`<div class="slot pop${hl}${sw}${bst}" style="left:${coord.l}%;top:${coord.t}%" ${swapMode?`data-swap-pos="${pos}"`:''} ${benchSwapActive?`data-bench-target="${pos}"`:''}>
+      const canTap=!swapMode&&!benchSwapActive;
+      slots+=`<div class="slot pop${hl}${sw}${bst}" style="left:${coord.l}%;top:${coord.t}%" ${swapMode?`data-swap-pos="${pos}"`:''} ${benchSwapActive?`data-bench-target="${pos}"`:''} ${canTap?`data-show-card="${p.id}"`:''}>
         <div class="slot-filled">
           ${ph?`<img class="slot-photo" src="${ph}" alt="${p.name}" style="border-color:${rarityColor(p.rarity)}">`:`<div class="slot-photo-placeholder" style="border-color:${rarityColor(p.rarity)}">${p.num}</div>`}
           <div class="slot-name">${p.name}</div>
@@ -1664,6 +1679,21 @@ function bindEvents(){
       if(targetEntry)targetEntry.pos=benchPos;
       S._benchSwapKid=null;S._benchSwapPos=null;
       save();render();
+    });
+  });
+
+  // Tap-to-view player card popup
+  document.querySelectorAll('[data-show-card]').forEach(el=>{
+    el.addEventListener('click',e=>{
+      e.stopPropagation();
+      const pid=el.dataset.showCard;
+      const p=getPlayerById(pid);
+      if(!p)return;
+      const ov=document.createElement('div');
+      ov.className='card-popup-overlay';
+      ov.innerHTML=`<div class="card-popup-card">${renderPlayerCard(p)}</div>`;
+      ov.addEventListener('click',()=>ov.remove());
+      document.body.appendChild(ov);
     });
   });
 
