@@ -311,6 +311,21 @@ body{
 .card-popup-card .pc-stars{font-size:11px}
 @keyframes cardZoom{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes cardFade{from{opacity:0}to{opacity:1}}
+/* History popup */
+.history-popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;animation:cardFade .2s}
+.history-popup{width:92%;max-width:400px;max-height:85vh;border-radius:18px;background:linear-gradient(180deg,#1B5E20,#2E7D32);box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;animation:cardZoom .25s ease-out;display:flex;flex-direction:column}
+.history-popup-title{text-align:center;font-size:16px;font-weight:800;color:#fff;padding:14px 12px 6px}
+.history-popup-date{text-align:center;font-size:12px;color:rgba(255,255,255,.6);margin-bottom:8px}
+.history-popup-pitch{position:relative;width:100%;padding-bottom:120%;background:linear-gradient(180deg,#388E3C,#43A047);border-radius:0 0 12px 12px}
+.history-popup-pitch .slot{position:absolute;text-align:center;transform:translateX(-50%)}
+.history-popup-pitch .slot-photo{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.6)}
+.history-popup-pitch .slot-photo-placeholder{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff;border:2px solid rgba(255,255,255,.4)}
+.history-popup-pitch .slot-name{font-size:9px;color:#fff;font-weight:600;white-space:nowrap;margin-top:2px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.history-popup-bench{display:flex;justify-content:center;gap:14px;padding:10px;background:rgba(0,0,0,.15);flex-wrap:wrap}
+.history-popup-bench-player{text-align:center}
+.history-popup-bench-player img{width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,.5)}
+.history-popup-bench-player .ph{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;border:2px solid rgba(255,255,255,.4)}
+.history-popup-bench-player span{display:block;font-size:9px;color:rgba(255,255,255,.8);margin-top:2px}
 .bench-row{display:flex;justify-content:center;gap:12px;padding:10px 14px;background:rgba(0,0,0,.15);border-radius:0 0 16px 16px;margin:-8px 14px 0;flex-wrap:wrap}
 .bench-slot{text-align:center;flex:0 0 60px}
 .bench-slot .slot-label{font-size:10px;color:rgba(255,255,255,.7)}
@@ -972,7 +987,7 @@ function renderTeamForKid(kid){
     S[kid][c.hi].forEach((h,i)=>{
       const players=h.team.map(t=>getPlayerById(t.playerId)).filter(Boolean);
       const names=players.slice(0,3).map(p=>p.name).join(', ');
-      html+=`<div class="history-item" data-kid="${kid}" data-history="${i}">
+      html+=`<div class="history-item" data-kid="${kid}" data-history="${i}" data-hi="${c.hi}">
         <span>${names}${players.length>3?' ...':''}</span>
         <span style="font-size:11px;color:var(--text3)">${h.date||''}</span>
       </div>`;
@@ -1480,9 +1495,52 @@ function showMatchFinal(){
 }
 
 function stopMatch(){
-  // Clean up any match overlays left on screen
   document.querySelectorAll('.wc-round-announce,.wc-final').forEach(el=>el.remove());
   wcMatch=null;S.view='team';save();render();
+}
+
+function showHistoryPopup(kid,history){
+  const teamEntries=history.team||[];
+  const byPos={};
+  teamEntries.forEach(t=>{byPos[t.pos]=getPlayerById(t.playerId)});
+  // Build pitch slots
+  let pitchSlots='';
+  Object.entries(FORMATION_POS).forEach(([pos,coord])=>{
+    const p=byPos[pos];
+    if(p){
+      const ph=PLAYER_PHOTOS[p.id];
+      pitchSlots+=`<div class="slot" style="left:${coord.l}%;top:${coord.t}%">
+        ${ph?`<img class="slot-photo" src="${ph}" style="border-color:${rarityColor(p.rarity)}">`:`<div class="slot-photo-placeholder" style="border-color:${rarityColor(p.rarity)}">${p.num}</div>`}
+        <div class="slot-name">${p.name}</div>
+      </div>`;
+    }
+  });
+  // Bench players
+  const benchEntries=teamEntries.filter(t=>t.pos.startsWith('BENCH')).sort((a,b)=>{
+    return (parseInt(a.pos.replace('BENCH',''))||0)-(parseInt(b.pos.replace('BENCH',''))||0);
+  });
+  let benchHtml='';
+  benchEntries.forEach(t=>{
+    const p=getPlayerById(t.playerId);
+    if(!p)return;
+    const ph=PLAYER_PHOTOS[p.id];
+    benchHtml+=`<div class="history-popup-bench-player">
+      ${ph?`<img src="${ph}">`:`<div class="ph">${p.num}</div>`}
+      <span>${p.name}</span>
+    </div>`;
+  });
+  const ov=document.createElement('div');
+  ov.className='history-popup-overlay';
+  ov.innerHTML=`<div class="history-popup">
+    <div class="history-popup-title">🏆 ${KIDS[kid].name}</div>
+    <div class="history-popup-date">${history.date||''}</div>
+    <div class="history-popup-pitch">
+      ${pitchSlots}
+    </div>
+    ${benchHtml?`<div class="history-popup-bench">${benchHtml}</div>`:''}
+  </div>`;
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove()});
+  document.body.appendChild(ov);
 }
 
 function bindEvents(){
@@ -1735,6 +1793,19 @@ function bindEvents(){
       ov.innerHTML=`<div class="card-popup-card">${renderPlayerCard(p)}</div>`;
       ov.addEventListener('click',()=>ov.remove());
       document.body.appendChild(ov);
+    });
+  });
+
+  // History popup
+  document.querySelectorAll('[data-history]').forEach(el=>{
+    el.addEventListener('click',e=>{
+      e.stopPropagation();
+      const kid=el.dataset.kid;
+      const idx=parseInt(el.dataset.history);
+      const hiKey=el.dataset.hi;
+      const h=S[kid]?.[hiKey]?.[idx];
+      if(!h)return;
+      showHistoryPopup(kid,h);
     });
   });
 
