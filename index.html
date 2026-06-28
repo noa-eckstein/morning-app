@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1B5E20">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231B5E20'/><text y='65' x='50' text-anchor='middle' font-size='50'>⚽</text></svg>">
 <title>בוקר של אלופים</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -89,6 +92,12 @@ body{
   position:absolute;width:100%;text-align:center;font-size:12px;font-weight:700;
   color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3);z-index:2;direction:ltr;
 }
+.task-dots{display:flex;justify-content:center;gap:4px;padding:6px 0 2px;flex-wrap:wrap}
+.task-dot{font-size:10px;color:#BDBDBD;transition:.3s}
+.task-dot.done{font-size:12px;animation:dotPop .4s ease}
+.task-dot.bonus-dot{color:#E0C080}
+.task-dot.bonus-dot.done{color:#FFB300}
+@keyframes dotPop{0%{transform:scale(0)}50%{transform:scale(1.5)}100%{transform:scale(1)}}
 .milestones{display:flex;justify-content:space-between;padding:4px 4px 0;direction:ltr}
 .milestone{font-size:14px;opacity:.4;transition:.3s}
 .milestone.reached{opacity:1;transform:scale(1.3)}
@@ -105,6 +114,13 @@ body{
 .task-item.done .task-name{text-decoration:line-through;color:var(--text3)}
 .task-item.special{border:2px solid var(--gold);background:#FFF8E1}
 .task-item.special.done{background:#F1F8E9;border-color:var(--pitch-light)}
+.task-item.reminder{border:2px dashed var(--gold);background:#FFF8E1;cursor:default}
+.task-item.reminder:active{transform:none}
+.task-item.reminder .task-check{display:none}
+.reminder-badge{font-size:10px;background:var(--gold);color:#fff;padding:3px 8px;border-radius:8px;font-weight:700;white-space:nowrap}
+.col-task.reminder{border:1px dashed var(--gold);background:#FFF8E1;cursor:default}
+.col-task.reminder:active{transform:none}
+.col-task.reminder .col-task-check{display:none}
 .task-icon{font-size:28px;flex-shrink:0;width:36px;text-align:center}
 .task-name{font-size:17px;font-weight:600;flex:1}
 .task-special-badge{
@@ -311,6 +327,32 @@ body{
 .card-popup-card .pc-stars{font-size:11px}
 @keyframes cardZoom{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes cardFade{from{opacity:0}to{opacity:1}}
+/* Task completion animation */
+@keyframes taskDone{0%{transform:scale(1)}30%{transform:scale(.95)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
+@keyframes checkPop{0%{transform:scale(0) rotate(-45deg)}50%{transform:scale(1.3) rotate(0deg)}100%{transform:scale(1) rotate(0deg)}}
+@keyframes taskGlow{0%{box-shadow:var(--shadow)}50%{box-shadow:0 0 16px rgba(46,125,50,.5)}100%{box-shadow:var(--shadow)}}
+.task-item.just-done{animation:taskDone .4s ease,taskGlow .6s ease}
+.task-item.just-done .task-check{animation:checkPop .35s ease .05s both}
+.col-task.just-done{animation:taskDone .4s ease}
+.col-task.just-done .col-task-check{animation:checkPop .35s ease .05s both}
+/* Bench long-press hint */
+.bench-slot.bench-hold{transform:scale(.92);transition:transform .15s}
+/* PWA install banner */
+.install-banner{
+  position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;
+  padding:10px 20px;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.3);
+  display:flex;align-items:center;gap:10px;z-index:9998;
+  animation:cardZoom .3s ease-out;font-size:14px;font-weight:700;
+  max-width:90%;
+}
+.install-banner button{
+  background:#FFB300;color:#1B5E20;border:none;border-radius:10px;
+  padding:8px 16px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap;
+}
+.install-banner .install-close{
+  background:none;color:rgba(255,255,255,.6);font-size:20px;padding:0 4px;cursor:pointer;border:none;
+}
 /* History popup */
 .history-popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;animation:cardFade .2s}
 .history-popup{width:92%;max-width:400px;max-height:85vh;border-radius:18px;background:linear-gradient(180deg,#1B5E20,#2E7D32);box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;animation:cardZoom .25s ease-out;display:flex;flex-direction:column}
@@ -584,6 +626,7 @@ const COMMON_TASKS=[
   {id:'dress',name:'להתלבש',icon:'\u{1F455}'},
   {id:'eat',name:'לאכול ארוחת בוקר',icon:'\u{1F37D}\u{FE0F}'},
   {id:'teeth',name:'לצחצח שיניים',icon:'\u{1FAA5}'},
+  {id:'brush_back',name:'להחזיר מברשת שיניים',icon:'\u{1FAA5}'},
   {id:'socks',name:'לגרוב גרביים',icon:'\u{1F9E6}'},
   {id:'shoes',name:'לנעול נעליים',icon:'\u{1F45F}'},
   {id:'bag',name:'קופסה ובקבוק לתיק',icon:'\u{1F392}'},
@@ -595,8 +638,8 @@ const LEGENDS=['pele','maradona','zidane','r9','ronaldinho','beckham','kaka','zl
 
 const SPECIAL_TASKS={
   yehonatan:[
-    {id:'electronics',name:'קופסת אלקטרוניקה',icon:'\u{1F50C}',days:[0]},
-    {id:'soccer_ball',name:'כדור לכדורגל',icon:'⚽',days:[1,4]},
+    {id:'electronics',name:'קופסת אלקטרוניקה',icon:'\u{1F50C}',days:[0],reminder:true},
+    {id:'soccer_ball',name:'כדור לכדורגל',icon:'⚽',days:[1,4],reminder:true},
   ]
 };
 
@@ -605,6 +648,7 @@ const EVENING_TASKS=[
   {id:'ev_shower',name:'להתקלח',icon:'\u{1F6BF}'},
   {id:'ev_dress',name:'להתלבש',icon:'\u{1F455}'},
   {id:'ev_teeth',name:'לצחצח שיניים',icon:'\u{1FAA5}'},
+  {id:'ev_brush_back',name:'להחזיר מברשת שיניים',icon:'\u{1FAA5}'},
   {id:'ev_pee',name:'לעשות פיפי',icon:'\u{1F6BD}'},
   {id:'ev_tidy',name:'להחזיר 5 דברים למקום',icon:'\u{1F9F9}',bonus:true},
   {id:'ev_tidy2',name:'להחזיר עוד 5 דברים למקום',icon:'\u{1F9F9}',bonus:true,legendary:true},
@@ -665,8 +709,6 @@ function load(){
   const ilH=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Jerusalem'})).getHours();
   S.session=(ilH>=17||ilH<5)?'evening':'morning';
 }
-
-function save(){localStorage.setItem('morningChamps',JSON.stringify(S))}
 
 function effectiveNow(){
   const now=new Date();
@@ -748,9 +790,9 @@ function getTasks(kid){
   return tasks;
 }
 
-function doneCount(kid){const c=ctx();return getTasks(kid).filter(t=>S[kid][c.tk][t.id]).length}
-function nonBonusDone(kid){const c=ctx();return getTasks(kid).filter(t=>!t.bonus&&S[kid][c.tk][t.id]).length}
-function nonBonusTotal(kid){return getTasks(kid).filter(t=>!t.bonus).length}
+function doneCount(kid){const c=ctx();return getTasks(kid).filter(t=>!t.reminder&&S[kid][c.tk][t.id]).length}
+function nonBonusDone(kid){const c=ctx();return getTasks(kid).filter(t=>!t.bonus&&!t.reminder&&S[kid][c.tk][t.id]).length}
+function nonBonusTotal(kid){return getTasks(kid).filter(t=>!t.bonus&&!t.reminder).length}
 
 function getMilestones(kid){
   const c=ctx();
@@ -863,6 +905,11 @@ function renderKidColumn(kid){
   const c=ctx();
   html+=tasks.map(t=>{
     const isDone=S[kid][c.tk][t.id];
+    if(t.reminder)return `<div class="col-task reminder">
+      <div class="col-task-icon">${t.icon}</div>
+      <div class="col-task-name">${t.name}</div>
+      <div class="reminder-badge">תזכורת!</div>
+    </div>`;
     return `<div class="col-task ${isDone?'done':''} ${t.special?'special':''} ${t.bonus?'bonus':''} ${t.legendary?'legendary':''}" data-kid="${kid}" data-col-task="${t.id}">
       <div class="col-task-icon">${t.icon}</div>
       <div class="col-task-name">${t.name}${t.legendary?' 👑':t.bonus?' ⭐':''}</div>
@@ -896,20 +943,24 @@ function renderTasksView(){
   // Tablet: dual columns
   let html=`<div class="dual-tasks">`;
   html+=renderSessionToggle();
-  html+=`<div class="dual-day-label">${c.emoji} יום ${dayName} — ${c.label} <span class="reset-btn" data-action="reset-day">↩</span></div>`;
+  html+=`<div class="dual-day-label">${c.emoji} יום ${dayName} — ${c.label}</div>`;
   Object.keys(KIDS).forEach(k=>{html+=renderKidColumn(k)});
   html+=`</div>`;
 
   // Mobile: single kid view
   html+=`<div class="single-tasks">`;
   html+=renderSessionToggle();
-  html+=`<div class="day-label" style="padding-top:10px">${c.emoji} יום ${dayName} — ${c.label} <span class="reset-btn" data-action="reset-day">↩</span></div>`;
+  html+=`<div class="day-label" style="padding-top:10px">${c.emoji} יום ${dayName} — ${c.label}</div>`;
 
   html+=`<div class="progress-wrap">
     <div class="progress-bar">
       <div class="progress-fill" style="width:${pct}%"></div>
       <div class="progress-text">${done} / ${total}</div>
     </div>
+    <div class="task-dots">${tasks.filter(t=>!t.reminder).map((t,i)=>{
+      const isDot=S[kid][c.tk][t.id];
+      return `<div class="task-dot ${isDot?'done':''}${t.bonus?' bonus-dot':''}">${isDot?'⭐':'○'}</div>`;
+    }).join('')}</div>
     ${ms.length?`<div class="milestones">${ms.map(m=>{
       const nb=nonBonusDone(kid);
       const reached=nb>=m.threshold;
@@ -926,6 +977,11 @@ function renderTasksView(){
 
   html+=`<div class="task-list">${tasks.map(t=>{
     const isDone=S[kid][c.tk][t.id];
+    if(t.reminder)return `<div class="task-item reminder">
+      <div class="task-icon">${t.icon}</div>
+      <div class="task-name">${t.name}</div>
+      <div class="reminder-badge">תזכורת!</div>
+    </div>`;
     return `<div class="task-item ${isDone?'done':''} ${t.special?'special':''} ${t.bonus?'bonus':''} ${t.legendary?'legendary':''}" data-task="${t.id}">
       ${t.special?'<div class="task-special-badge">היום!</div>':''}
       <div class="task-icon">${t.icon}</div>
@@ -1258,6 +1314,16 @@ const ROUND_TYPES=[
 
 let wcMatch=null; // current match state
 
+function getMatchTeam(){
+  const kid=S.currentKid;
+  if(wcMatch&&wcMatch.historyRef){
+    const hr=wcMatch.historyRef;
+    return S[hr.kid]?.[hr.hiKey]?.[hr.idx]?.team||[];
+  }
+  const c=ctx();
+  return S[kid][c.tm];
+}
+
 function generateMatchRounds(){
   const rounds=[
     ROUND_TYPES[0],ROUND_TYPES[0],ROUND_TYPES[0],
@@ -1269,8 +1335,7 @@ function generateMatchRounds(){
 }
 
 function generateComputerTeam(kid){
-  const c=ctx();
-  const kidIds=new Set(S[kid][c.tm].map(t=>t.playerId));
+  const kidIds=new Set(getMatchTeam().map(t=>t.playerId));
   const pool=PLAYERS.filter(p=>!LEGENDS.includes(p.id)&&!kidIds.has(p.id));
   // Take top 20 by OVR, then randomly pick 14 for variety
   const top=pool.sort((a,b)=>b.ovr-a.ovr).slice(0,22);
@@ -1288,10 +1353,12 @@ function getComputerPick(roundType,usedIds,computerTeam){
   return sorted[Math.floor(Math.random()*n)];
 }
 
-function startMatch(){
+function startMatch(historyRef){
   const kid=S.currentKid;
   const c=ctx();
-  if(S[kid][c.tm].length<TEAM_SIZE){autoFillTeam(kid);save()}
+  if(!historyRef){
+    if(S[kid][c.tm].length<TEAM_SIZE){autoFillTeam(kid);save()}
+  }
   wcMatch={
     round:0,
     rounds:generateMatchRounds(),
@@ -1300,6 +1367,7 @@ function startMatch(){
     usedHome:new Set(),usedAway:new Set(),
     computerTeam:generateComputerTeam(kid),
     phase:'pick',homePick:null,awayPick:null,
+    historyRef:historyRef||null,
   };
   S.view='match';
   render();
@@ -1324,7 +1392,7 @@ function renderMatchView(){
   const kid=S.currentKid;
   const c=ctx();
   const ri=m.rounds[m.round];
-  const team=S[kid][c.tm];
+  const team=getMatchTeam();
 
   let html=`<div class="wc-view">`;
   html+=`<button class="wc-back-btn" id="wc-back">✕</button>`;
@@ -1426,8 +1494,7 @@ function pickMatchPlayer(playerId){
   m.usedAway.add(awayPick.id);
   const stat=ri.stat;
   const kid=S.currentKid;
-  const c=ctx();
-  const team=S[kid][c.tm];
+  const team=getMatchTeam();
   if(homePick[stat]>awayPick[stat]){
     // Win — add computer's player to bench
     m.homeScore++;
@@ -1465,8 +1532,13 @@ function showMatchFinal(){
   const c=ctx();
   const win=m.homeScore>m.awayScore;
   const tie=m.homeScore===m.awayScore;
-  // Mark match as played for this session — no replay until next week
-  S[kid][c.tm+'Match']=true;
+  if(m.historyRef){
+    const hr=m.historyRef;
+    const entry=S[hr.kid]?.[hr.hiKey]?.[hr.idx];
+    if(entry)entry.matchPlayed=true;
+  }else{
+    S[kid][c.tm+'Match']=true;
+  }
   save();
   showConfetti(win);
   let transferHtml='';
@@ -1499,7 +1571,7 @@ function stopMatch(){
   wcMatch=null;S.view='team';save();render();
 }
 
-function showHistoryPopup(kid,history){
+function showHistoryPopup(kid,history,historyRef){
   const teamEntries=history.team||[];
   const byPos={};
   teamEntries.forEach(t=>{byPos[t.pos]=getPlayerById(t.playerId)});
@@ -1529,6 +1601,8 @@ function showHistoryPopup(kid,history){
       <span>${p.name}</span>
     </div>`;
   });
+  const canMatch=!history.matchPlayed&&teamEntries.length>=TEAM_SIZE;
+  const matchBtn=canMatch?`<button class="match-btn" style="margin:10px auto;display:block" id="history-match-btn">⚽ אתגר את המחשב!</button>`:'';
   const ov=document.createElement('div');
   ov.className='history-popup-overlay';
   ov.innerHTML=`<div class="history-popup">
@@ -1538,8 +1612,18 @@ function showHistoryPopup(kid,history){
       ${pitchSlots}
     </div>
     ${benchHtml?`<div class="history-popup-bench">${benchHtml}</div>`:''}
+    ${matchBtn}
   </div>`;
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove()});
+  if(canMatch){
+    ov.querySelector('#history-match-btn').addEventListener('click',e=>{
+      e.stopPropagation();
+      ov.remove();
+      S.currentKid=kid;
+      save();
+      startMatch(historyRef);
+    });
+  }
   document.body.appendChild(ov);
 }
 
@@ -1582,9 +1666,10 @@ function bindEvents(){
       else if(isBonus&&bonusNew){S[kid][c.sw]=(S[kid][c.sw]||0)+2;S[kid][c.bc].push(tid)}
       save();
 
-      el.classList.add('done');
+      el.classList.add('done','just-done');
       el.querySelector('.task-check').textContent='✓';
       showConfetti(true);
+      setTimeout(()=>el.classList.remove('just-done'),700);
 
       const tasks=getTasks(kid);
       const done=doneCount(kid);
@@ -1642,7 +1727,11 @@ function bindEvents(){
       else if(isBonus&&bonusNew){S[kid][c.sw]=(S[kid][c.sw]||0)+2;S[kid][c.bc].push(tid)}
       S.currentKid=kid;
       save();
+      el.classList.add('done','just-done');
+      const chk=el.querySelector('.col-task-check');
+      if(chk)chk.textContent='✓';
       showConfetti(true);
+      setTimeout(()=>el.classList.remove('just-done'),700);
 
       setTimeout(()=>{
         if(isLeg&&bonusNew&&S[kid][c.tm].length>0){
@@ -1679,15 +1768,6 @@ function bindEvents(){
     });
   });
 
-  document.querySelectorAll('[data-action="reset-day"]').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const c=ctx();
-      if(!confirm(`להתחיל ${c.label} מחדש?`))return;
-      ['yehonatan','yoav'].forEach(k=>{S[k][c.tk]={};S[k][c.cl]=[];S[k][c.bc]=[];S[k][c.sw]=0;S[k][c.lsw]=0});
-      save();
-      render();
-    });
-  });
 
   document.querySelectorAll('[data-leg-swap-kid]').forEach(btn=>{
     btn.addEventListener('click',()=>{
@@ -1747,19 +1827,60 @@ function bindEvents(){
     });
   });
 
-  // Bench-formation swap: click bench player to select, then click formation slot to swap
+  // Bench: long-press to swap, short tap to view card
   document.querySelectorAll('[data-bench-pick]').forEach(el=>{
-    el.addEventListener('click',()=>{
-      const pos=el.dataset.benchPick;
-      const kid=el.dataset.kid;
-      if(!kid)return;
-      if(S._benchSwapKid===kid&&S._benchSwapPos===pos){
-        S._benchSwapKid=null;S._benchSwapPos=null;
-      }else{
-        S._benchSwapKid=kid;S._benchSwapPos=pos;
+    let pressTimer=null,didLong=false;
+    const startPress=e=>{
+      didLong=false;
+      el.classList.add('bench-hold');
+      pressTimer=setTimeout(()=>{
+        didLong=true;
+        el.classList.remove('bench-hold');
+        const pos=el.dataset.benchPick;
+        const kid=el.dataset.kid;
+        if(!kid)return;
+        if(S._benchSwapKid===kid&&S._benchSwapPos===pos){
+          S._benchSwapKid=null;S._benchSwapPos=null;
+        }else{
+          S._benchSwapKid=kid;S._benchSwapPos=pos;
+        }
+        render();
+      },400);
+    };
+    const endPress=e=>{
+      el.classList.remove('bench-hold');
+      if(pressTimer){clearTimeout(pressTimer);pressTimer=null}
+      if(!didLong){
+        // Short tap → show card popup
+        const kid=el.dataset.kid;
+        const pos=el.dataset.benchPick;
+        if(!kid||!pos)return;
+        // If bench swap is active, short tap cancels it
+        if(S._benchSwapKid===kid&&S._benchSwapPos){
+          S._benchSwapKid=null;S._benchSwapPos=null;
+          render();return;
+        }
+        const c=ctx();
+        const team=S[kid][c.tm];
+        const entry=team.find(t=>t.pos===pos);
+        if(!entry)return;
+        const p=getPlayerById(entry.playerId);
+        if(!p)return;
+        const ov=document.createElement('div');
+        ov.className='card-popup-overlay';
+        ov.innerHTML=`<div class="card-popup-card">${renderPlayerCard(p)}</div>`;
+        ov.addEventListener('click',()=>ov.remove());
+        document.body.appendChild(ov);
       }
-      render();
-    });
+    };
+    const cancelPress=()=>{el.classList.remove('bench-hold');if(pressTimer){clearTimeout(pressTimer);pressTimer=null}};
+    el.addEventListener('touchstart',startPress,{passive:true});
+    el.addEventListener('touchend',endPress);
+    el.addEventListener('touchcancel',cancelPress);
+    el.addEventListener('mousedown',startPress);
+    el.addEventListener('mouseup',endPress);
+    el.addEventListener('mouseleave',cancelPress);
+    el.addEventListener('contextmenu',e=>e.preventDefault());
   });
   document.querySelectorAll('[data-bench-target]').forEach(el=>{
     el.addEventListener('click',()=>{
@@ -1805,7 +1926,7 @@ function bindEvents(){
       const hiKey=el.dataset.hi;
       const h=S[kid]?.[hiKey]?.[idx];
       if(!h)return;
-      showHistoryPopup(kid,h);
+      showHistoryPopup(kid,h,{kid,hiKey,idx});
     });
   });
 
@@ -1910,9 +2031,98 @@ function animateConfetti(){
   else{confettiRunning=false;confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height)}
 }
 
+// ── PWA Service Worker (inline blob) ──
+(function setupPWA(){
+  if(!('serviceWorker' in navigator))return;
+  const swCode=`
+    const CACHE='mc-v2';
+    self.addEventListener('install',e=>{self.skipWaiting()});
+    self.addEventListener('activate',e=>{
+      e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
+    });
+    self.addEventListener('fetch',e=>{
+      if(e.request.method!=='GET')return;
+      e.respondWith(fetch(e.request).then(r=>{
+        if(r.ok){const c=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,c))}
+        return r;
+      }).catch(()=>caches.match(e.request)));
+    });
+  `;
+  const blob=new Blob([swCode],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+})();
+
+// ── PWA Install Prompt ──
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  if(localStorage.getItem('mc_installDismissed'))return;
+  showInstallBanner();
+});
+
+function showInstallBanner(){
+  if(document.querySelector('.install-banner'))return;
+  const b=document.createElement('div');
+  b.className='install-banner';
+  b.innerHTML=`⚽ להתקין על מסך הבית?
+    <button id="install-yes">התקן</button>
+    <span class="install-close" id="install-no">✕</span>`;
+  document.body.appendChild(b);
+  document.getElementById('install-yes').addEventListener('click',()=>{
+    if(deferredInstallPrompt){deferredInstallPrompt.prompt();deferredInstallPrompt=null}
+    b.remove();
+  });
+  document.getElementById('install-no').addEventListener('click',()=>{
+    localStorage.setItem('mc_installDismissed','1');
+    b.remove();
+  });
+}
+
+// ── Cross-device Sync ──
+const SYNC_URL=location.origin+'/sync';
+let syncDebounce=null,syncReady=false;
+
+function save(){
+  S.lastModified=Date.now();
+  localStorage.setItem('morningChamps',JSON.stringify(S));
+  if(!syncReady)return; // don't push until first pull completes
+  if(syncDebounce)clearTimeout(syncDebounce);
+  syncDebounce=setTimeout(()=>syncToServer(),3000);
+}
+
+function syncToServer(){
+  const data=localStorage.getItem('morningChamps');
+  if(!data)return;
+  fetch(SYNC_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:data
+  }).catch(()=>{});
+}
+
+function pullFromServer(originalLM){
+  return fetch(SYNC_URL)
+    .then(r=>{if(!r.ok)throw new Error();return r.json()})
+    .then(remote=>{
+      if(!remote||!remote.lastModified)return;
+      const local=originalLM!=null?originalLM:(S.lastModified||0);
+      if(remote.lastModified>local){
+        Object.assign(S,remote);
+        localStorage.setItem('morningChamps',JSON.stringify(S));
+        checkResets();
+        render();
+      }
+    }).catch(()=>{})
+    .finally(()=>{syncReady=true});
+}
+
 load();
+const _preResetLM=S.lastModified||0; // save before checkResets bumps it
 checkResets();
 render();
+// Pull after initial render — if server has newer data, it overwrites and re-renders
+pullFromServer(_preResetLM);
 
 window.addEventListener('resize',()=>{
   confettiCanvas.width=window.innerWidth;
