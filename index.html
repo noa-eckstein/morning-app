@@ -539,6 +539,104 @@ body{
 @media(max-width:699px){
   .dual-tasks{display:none}
 }
+
+/* ===== Brush guide (איך מצחצחים) ===== */
+.brush-guide-btn{
+  flex-shrink:0;border:none;cursor:pointer;font-family:inherit;
+  background:linear-gradient(135deg,#4FC3F7,#81D4FA);color:#fff;
+  font-size:12px;font-weight:800;padding:6px 12px;border-radius:999px;
+  box-shadow:0 2px 6px rgba(79,195,247,.4);
+}
+.brush-guide-btn:active{transform:scale(.94)}
+.brush-guide-btn.compact{padding:5px 9px;font-size:13px}
+.brush-overlay{
+  position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.28);backdrop-filter:blur(2px);animation:cardFade .2s;
+}
+.brush-card{
+  position:relative;display:flex;flex-direction:column;overflow:hidden;
+  background:#FFF8E1;box-shadow:0 12px 48px rgba(0,0,0,.28);
+}
+@media(min-width:700px){
+  .brush-card{width:min(560px,92vw);max-height:92vh;border-radius:24px}
+}
+@media(max-width:699px){
+  .brush-overlay{background:#FFF8E1;backdrop-filter:none}
+  .brush-card{width:100vw;height:100dvh;border-radius:0;box-shadow:none}
+}
+.brush-x{
+  position:absolute;top:10px;left:10px;z-index:6;width:46px;height:46px;border-radius:50%;
+  border:none;background:#fff;color:#78909C;font-size:20px;font-weight:800;cursor:pointer;
+  box-shadow:0 2px 10px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;
+}
+.brush-x:active{transform:scale(.92)}
+.brush-top{display:flex;align-items:center;gap:10px;padding:14px 16px 2px 64px}
+.brush-mascot{width:62px;height:62px;flex-shrink:0}
+.brush-bubble{
+  flex:1;background:#fff;border-radius:16px;border-bottom-right-radius:4px;
+  padding:10px 14px;font-size:16px;font-weight:800;color:#455A64;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);min-height:24px;
+}
+.brush-scene{flex:1;display:flex;align-items:center;justify-content:center;padding:4px 10px;min-height:0}
+.brush-scene svg{width:100%;max-height:44vh}
+.brush-bottom{display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 16px 14px}
+.brush-ring-svg{width:128px;height:128px}
+.brush-ring-text{font-size:26px;font-weight:900;fill:#455A64}
+.brush-controls{display:flex;gap:14px}
+.brush-ctl{
+  width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;font-size:21px;
+  background:#fff;color:#455A64;box-shadow:0 2px 8px rgba(0,0,0,.12);
+  display:flex;align-items:center;justify-content:center;
+}
+.brush-ctl.primary{background:linear-gradient(135deg,#4FC3F7,#29B6F6);color:#fff;font-size:24px}
+.brush-ctl:active{transform:scale(.92)}
+.brush-dots{display:flex;gap:8px}
+.brush-dot{width:13px;height:13px;border-radius:50%;background:#E0E0E0;transition:.3s}
+.brush-dot.active{background:#4FC3F7;transform:scale(1.25)}
+.brush-dot.done{background:#69F0AE}
+.brush-panel{
+  position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:14px;background:rgba(255,248,225,.94);padding:24px;text-align:center;
+}
+.brush-panel[hidden]{display:none}
+.brush-big-play{
+  width:92px;height:92px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#4FC3F7,#29B6F6);color:#fff;font-size:38px;
+  box-shadow:0 6px 24px rgba(41,182,246,.5);display:flex;align-items:center;justify-content:center;
+  animation:brushBreath 2s ease-in-out infinite;
+}
+@keyframes brushBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.brush-panel-title{font-size:22px;font-weight:900;color:#455A64}
+.brush-panel-sub{font-size:14px;font-weight:600;color:#78909C}
+.brush-tip{
+  background:#fff;border-radius:14px;padding:8px 14px;font-size:13px;font-weight:600;color:#78909C;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+.brush-stickers{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:280px;font-size:22px}
+.brush-sticker-big{font-size:58px;animation:brushPopIn .5s ease}
+@keyframes brushPopIn{0%{transform:scale(0) rotate(-30deg)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
+.brush-done-btn{
+  border:none;cursor:pointer;border-radius:999px;padding:12px 26px;font-family:inherit;
+  font-size:16px;font-weight:800;box-shadow:0 3px 10px rgba(0,0,0,.15);
+}
+.brush-done-btn.primary{background:linear-gradient(135deg,#66BB6A,#A5D6A7);color:#fff}
+.brush-done-btn.secondary{background:#fff;color:#78909C}
+/* scene animation bits */
+.brush-quad{fill:#B9F6CA;opacity:0;rx:14;transition:opacity .4s}
+.brush-quad.active{opacity:.65;animation:brushQuadPulse 1.6s ease-in-out infinite}
+@keyframes brushQuadPulse{0%,100%{opacity:.5}50%{opacity:.8}}
+.brush-teeth-g rect{transition:fill .8s}
+.brush-teeth-g.dirty rect{fill:#FFF3CD}
+.brush-bug{transition:.2s;animation:brushBugWiggle 1.4s ease-in-out infinite}
+@keyframes brushBugWiggle{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+.brush-bug.swept{animation:brushBugSwept .8s ease forwards}
+@keyframes brushBugSwept{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-46px) scale(.4)}}
+.brush-sparkle{animation:brushSparkle .9s ease forwards;pointer-events:none}
+@keyframes brushSparkle{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1.25)}100%{opacity:0;transform:scale(.6) translateY(-14px)}}
+.brush-bubbleF{animation:brushBubbleF 1.1s ease-out forwards;pointer-events:none}
+@keyframes brushBubbleF{0%{opacity:.9;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-40px) scale(1.5)}}
+.brush-tongue{transition:.5s;transform-origin:200px 218px}
+.brush-tongue.flourish{transform:scale(1.5)}
 </style>
 </head>
 <body>
@@ -699,10 +797,10 @@ function load(){
     S=r?JSON.parse(r):null;
   }catch(e){S=null}
   if(!S)S={};
-  S=Object.assign({currentKid:'yehonatan',view:'tasks',session:'morning',lastDate:null,lastEveningDate:null,weekStart:null},S);
+  S=Object.assign({currentKid:'yehonatan',view:'tasks',session:'morning',lastDate:null,lastEveningDate:null,weekStart:null,brushMuted:false},S);
   ['yehonatan','yoav'].forEach(k=>{
     S[k]=Object.assign({photo:null,tasks:{},team:[],claimed:[],bonusClaimed:[],history:[],swaps:0,legSwaps:0,
-      evTasks:{},evTeam:[],evClaimed:[],evBonusClaimed:[],evHistory:[],evSwaps:0,evLegSwaps:0},S[k]||{});
+      evTasks:{},evTeam:[],evClaimed:[],evBonusClaimed:[],evHistory:[],evSwaps:0,evLegSwaps:0,brushStickers:[]},S[k]||{});
     if(!S[k].photo&&KID_PHOTOS[k])S[k].photo=KID_PHOTOS[k];
   });
   // Auto-detect session based on time
@@ -913,6 +1011,7 @@ function renderKidColumn(kid){
     return `<div class="col-task ${isDone?'done':''} ${t.special?'special':''} ${t.bonus?'bonus':''} ${t.legendary?'legendary':''}" data-kid="${kid}" data-col-task="${t.id}">
       <div class="col-task-icon">${t.icon}</div>
       <div class="col-task-name">${t.name}${t.legendary?' 👑':t.bonus?' ⭐':''}</div>
+      ${(t.id==='teeth'||t.id==='ev_teeth')?`<button class="brush-guide-btn compact" data-brush-guide data-kid="${kid}" aria-label="איך מצחצחים">🪥▶</button>`:''}
       <div class="col-task-check">${isDone?'✓':''}</div>
     </div>`;
   }).join('');
@@ -986,6 +1085,7 @@ function renderTasksView(){
       ${t.special?'<div class="task-special-badge">היום!</div>':''}
       <div class="task-icon">${t.icon}</div>
       <div class="task-name">${t.name}</div>
+      ${(t.id==='teeth'||t.id==='ev_teeth')?`<button class="brush-guide-btn" data-brush-guide data-kid="${kid}" aria-label="איך מצחצחים">▶ איך מצחצחים</button>`:''}
       <div class="task-check">${isDone?'✓':''}</div>
     </div>`;
   }).join('')}</div>`;
@@ -1643,6 +1743,13 @@ function bindEvents(){
     });
   });
 
+  document.querySelectorAll('[data-brush-guide]').forEach(el=>{
+    el.addEventListener('click',e=>{
+      e.stopPropagation();
+      openBrushGuide(el.dataset.kid||S.currentKid);
+    });
+  });
+
   document.querySelectorAll('[data-task]').forEach(el=>{
     el.addEventListener('click',()=>{
       const c=ctx();
@@ -2115,6 +2222,386 @@ function pullFromServer(originalLM){
       }
     }).catch(()=>{})
     .finally(()=>{syncReady=true});
+}
+
+/* ================= Brush guide — איך מצחצחים (2-min coach) ================= */
+
+const BRUSH_STRINGS={he:{
+  start:'מתחילים!',
+  ready:'מוכנים לצחצח? 🪥',
+  readySub:'2 דקות · 4 אזורים · המון כיף',
+  zones:['עכשיו למעלה מימין!','עכשיו למעלה משמאל!','עכשיו למטה משמאל!','עכשיו למטה מימין!'],
+  surfaces:['בחוץ — עיגולים קטנים','בפנים — ליד הלשון','למעלה על השיניים'],
+  tongue:'ועכשיו הלשון!',
+  cheers:['מעולה, ממשיכים!','כל הכבוד!','אתם אלופים!','כמעט סיימנו!'],
+  catchBugs:'תפסו את כל חיידקי הסוכר!',
+  done:'כל הכבוד! שיניים נקיות! ✨',
+  tomorrow:'מצחצחים שוב מחר 🌙',
+  markDone:'סמן שציחצחתי ✓',
+  stickerEarned:'הרווחת מדבקה!',
+  parentTip:'🫛 משחת שיניים בגודל אפונה · מבוגר עוזר לקטנטנים',
+}};
+
+// zone → quadrant geometry (mirror view: the kid's right = screen right)
+const BRUSH_QUADS=[
+  {key:'UR',row:'upper',cx:272,glow:'bqUR'},
+  {key:'UL',row:'upper',cx:128,glow:'bqUL'},
+  {key:'LL',row:'lower',cx:128,glow:'bqLL'},
+  {key:'LR',row:'lower',cx:272,glow:'bqLR'},
+];
+// brush head anchor + rotation per row/surface (0 outer, 1 inner, 2 chewing top)
+const BRUSH_ANCHORS={
+  upper:[{y:86,rot:-40},{y:86,rot:40},{y:118,rot:90}],
+  lower:[{y:214,rot:140},{y:214,rot:220},{y:182,rot:90}],
+};
+const BRUSH_STICKER_ICONS=['⭐','🦷','✨','🌟','🏅','💎','🪥','😁'];
+
+const brushSfx={
+  ctx:null,
+  ensure(){
+    if(!this.ctx){try{this.ctx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}
+    if(this.ctx&&this.ctx.state==='suspended'){try{this.ctx.resume()}catch(e){}}
+  },
+  tone(freq,dur,type,delay,vol){
+    if(!this.ctx||S.brushMuted)return;
+    try{
+      const t=this.ctx.currentTime+(delay||0);
+      const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+      o.type=type||'sine';o.frequency.value=freq;
+      g.gain.setValueAtTime(vol||.16,t);
+      g.gain.exponentialRampToValueAtTime(.001,t+dur);
+      o.connect(g);g.connect(this.ctx.destination);
+      o.start(t);o.stop(t+dur+.05);
+    }catch(e){}
+  },
+  chime(){this.tone(880,.35);this.tone(1320,.4,'sine',.12)},
+  pop(){this.tone(520,.09,'triangle');this.tone(780,.08,'triangle',.05)},
+  jingle(){[523,659,784,1047].forEach((f,i)=>this.tone(f,.32,'sine',i*.13,.2))},
+};
+
+function brushSpeak(text){
+  if(S.brushMuted||!('speechSynthesis' in window))return;
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='he-IL';u.rate=.9;u.pitch=1.1;
+    const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith('he'));
+    if(v)u.voice=v;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+function awardBrushSticker(kid){
+  const key=todayStr()+'-'+S.session;
+  S[kid].brushStickers=S[kid].brushStickers||[];
+  let st=S[kid].brushStickers.find(s=>s.key===key);
+  if(!st){
+    st={key,date:todayStr(),icon:BRUSH_STICKER_ICONS[Math.floor(Math.random()*BRUSH_STICKER_ICONS.length)]};
+    S[kid].brushStickers.push(st);
+    save();
+  }
+  return st;
+}
+
+function brushTeethSvg(){
+  const teethRow=(y,cls)=>Array.from({length:8},(_,i)=>`<rect x="${56+i*36}" y="${y}" width="32" height="52" rx="10" fill="#fff" stroke="#CFD8DC" stroke-width="2"/>`).join('');
+  const bug=(x,y,c,id)=>`<g class="brush-bug" data-bug="${id}" style="transform-box:fill-box;transform-origin:center">
+    <circle cx="${x}" cy="${y}" r="9" fill="${c}" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="${x-3.2}" cy="${y-2.5}" r="2.6" fill="#fff"/><circle cx="${x+3.2}" cy="${y-2.5}" r="2.6" fill="#fff"/>
+    <circle cx="${x-3.2}" cy="${y-2.2}" r="1.2" fill="#37474F"/><circle cx="${x+3.2}" cy="${y-2.2}" r="1.2" fill="#37474F"/>
+    <path d="M${x-2.5} ${y+3} Q${x} ${y+5.5} ${x+2.5} ${y+3}" stroke="#37474F" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  </g>`;
+  return `<svg id="bMouthSvg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="200" cy="150" rx="178" ry="130" fill="#F8BBD0"/>
+    <ellipse cx="200" cy="150" rx="152" ry="106" fill="#FFEBF0"/>
+    <ellipse id="bTongue" class="brush-tongue" cx="200" cy="218" rx="52" ry="22" fill="#F48FB1"/>
+    <rect id="bqUL" class="brush-quad" x="50" y="48" width="148" height="70"/>
+    <rect id="bqUR" class="brush-quad" x="202" y="48" width="148" height="70"/>
+    <rect id="bqLL" class="brush-quad" x="50" y="182" width="148" height="70"/>
+    <rect id="bqLR" class="brush-quad" x="202" y="182" width="148" height="70"/>
+    <g id="bTeethUL" class="brush-teeth-g dirty">${Array.from({length:4},(_,i)=>`<rect x="${56+i*36}" y="58" width="32" height="52" rx="10" fill="#fff" stroke="#CFD8DC" stroke-width="2"/>`).join('')}</g>
+    <g id="bTeethUR" class="brush-teeth-g dirty">${Array.from({length:4},(_,i)=>`<rect x="${200+i*36}" y="58" width="32" height="52" rx="10" fill="#fff" stroke="#CFD8DC" stroke-width="2"/>`).join('')}</g>
+    <g id="bTeethLL" class="brush-teeth-g dirty">${Array.from({length:4},(_,i)=>`<rect x="${56+i*36}" y="190" width="32" height="52" rx="10" fill="#fff" stroke="#CFD8DC" stroke-width="2"/>`).join('')}</g>
+    <g id="bTeethLR" class="brush-teeth-g dirty">${Array.from({length:4},(_,i)=>`<rect x="${200+i*36}" y="190" width="32" height="52" rx="10" fill="#fff" stroke="#CFD8DC" stroke-width="2"/>`).join('')}</g>
+    <g id="bBugs">
+      ${bug(234,80,'#AED581','UR0')}${bug(302,92,'#CE93D8','UR1')}
+      ${bug(98,92,'#FFCC80','UL0')}${bug(166,80,'#80DEEA','UL1')}
+      ${bug(80,214,'#CE93D8','LL0')}${bug(160,226,'#AED581','LL1')}
+      ${bug(240,226,'#80DEEA','LR0')}${bug(310,214,'#FFCC80','LR1')}
+    </g>
+    <g id="bFx"></g>
+    <g id="bBrush">
+      <rect x="18" y="-7" width="82" height="14" rx="7" fill="#81D4FA" stroke="#4FC3F7" stroke-width="1.5"/>
+      <rect x="-23" y="-8" width="46" height="16" rx="6" fill="#29B6F6"/>
+      ${Array.from({length:5},(_,i)=>`<rect x="${-20+i*8.4}" y="-22" width="6" height="15" rx="3" fill="#fff"/>`).join('')}
+      <circle cx="58" cy="0" r="5.5" fill="#fff"/>
+      <circle cx="56" cy="-1.5" r=".9" fill="#37474F"/><circle cx="60" cy="-1.5" r=".9" fill="#37474F"/>
+      <path d="M55.5 1.5 Q58 3.5 60.5 1.5" stroke="#37474F" stroke-width="1" fill="none" stroke-linecap="round"/>
+    </g>
+  </svg>`;
+}
+
+function brushMascotSvg(){
+  return `<svg class="brush-mascot" viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 12 Q16 4 26 4 L54 4 Q64 4 64 12 L64 40 Q64 54 55 62 Q50 66 47 59 Q44 50 40 50 Q36 50 33 59 Q30 66 25 62 Q16 54 16 40 Z"
+      fill="#fff" stroke="#CFD8DC" stroke-width="2.5"/>
+    <circle cx="31" cy="26" r="4.2" fill="#37474F"/><circle cx="49" cy="26" r="4.2" fill="#37474F"/>
+    <circle cx="32.5" cy="24.5" r="1.4" fill="#fff"/><circle cx="50.5" cy="24.5" r="1.4" fill="#fff"/>
+    <path id="bMascotSmile" d="M31 37 Q40 44 49 37" stroke="#F06292" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <text id="bMascotSpark" x="63" y="14" font-size="14" visibility="hidden">✨</text>
+  </svg>`;
+}
+
+let brushGuide=null;
+
+function openBrushGuide(kid){
+  if(brushGuide)brushGuide.close();
+  const T=BRUSH_STRINGS.he;
+  kid=kid&&KIDS[kid]?kid:S.currentKid;
+  const alreadyDone=(()=>{const c=ctx();return !!S[kid][c.tk][isEvening()?'ev_teeth':'teeth']})();
+  if('speechSynthesis' in window){try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{}}catch(e){}}
+
+  const RING_R=52,RING_C=2*Math.PI*RING_R,SEG=RING_C/4-8;
+  const ov=document.createElement('div');
+  ov.className='brush-overlay';
+  ov.innerHTML=`<div class="brush-card">
+    <button class="brush-x" data-bx aria-label="סגור">✕</button>
+    <div class="brush-top">
+      ${brushMascotSvg()}
+      <div class="brush-bubble" id="bBubble">${T.ready}</div>
+    </div>
+    <div class="brush-scene">${brushTeethSvg()}</div>
+    <div class="brush-bottom">
+      <svg class="brush-ring-svg" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="${RING_R}" fill="none" stroke="#ECEFF1" stroke-width="10"/>
+        ${[0,1,2,3].map(i=>`<circle id="bSeg${i}" cx="60" cy="60" r="${RING_R}" fill="none" stroke="#4FC3F7" stroke-width="10"
+          stroke-linecap="round" stroke-dasharray="0 ${RING_C}" transform="rotate(${-90+i*90+4/RING_C*360} 60 60)"/>`).join('')}
+        <text id="bClock" class="brush-ring-text" x="60" y="69" text-anchor="middle" style="direction:ltr">2:00</text>
+      </svg>
+      <div class="brush-controls">
+        <button class="brush-ctl primary" data-bplay aria-label="נגן / עצור">▶</button>
+        <button class="brush-ctl" data-brestart aria-label="מהתחלה">↺</button>
+        <button class="brush-ctl" data-bmute aria-label="השתק">${S.brushMuted?'🔇':'🔊'}</button>
+      </div>
+      <div class="brush-dots">${[0,1,2,3].map(i=>`<div class="brush-dot" id="bDot${i}"></div>`).join('')}</div>
+    </div>
+    <div class="brush-panel" id="bIdle">
+      <div class="brush-panel-title">${T.ready}</div>
+      <div class="brush-panel-sub">${T.readySub}</div>
+      <button class="brush-big-play" data-bstart aria-label="${T.start}">▶</button>
+      <div class="brush-panel-sub">${T.catchBugs}</div>
+      ${(S[kid].brushStickers||[]).length?`<div class="brush-stickers">${(S[kid].brushStickers||[]).slice(-10).map(s=>`<span>${s.icon}</span>`).join('')}</div>`:''}
+      <div class="brush-tip">${T.parentTip}</div>
+    </div>
+    <div class="brush-panel" id="bDone" hidden>
+      <div class="brush-sticker-big" id="bStickerBig"></div>
+      <div class="brush-panel-title">${T.done}</div>
+      <div class="brush-panel-sub" id="bStickerNote"></div>
+      ${alreadyDone?'':`<button class="brush-done-btn primary" data-bmark>${T.markDone}</button>`}
+      <button class="brush-done-btn secondary" data-bclose>${T.tomorrow}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+
+  const $=id=>ov.querySelector('#'+id);
+  const bubble=$('bBubble'),clock=$('bClock'),brush=ov.querySelector('#bBrush');
+  const playBtn=ov.querySelector('[data-bplay]');
+  const fx=ov.querySelector('#bFx');
+  const SVGNS='http://www.w3.org/2000/svg';
+
+  const ctl={
+    kid,state:'idle',elapsed:0,last:null,timer:null,
+    zone:-1,surface:-1,cheered:[false,false,false,false],tongueDone:false,swept:{},
+    setBubble(t){bubble.textContent=t},
+    fmt(){const r=Math.max(0,Math.ceil((120000-this.elapsed)/1000));return Math.floor(r/60)+':'+String(r%60).padStart(2,'0')},
+    moveBrush(){
+      let ax,ay,rot;
+      if(this.tongueDone&&this.state!=='complete'){ax=200;ay=214;rot=90}
+      else{
+        const q=BRUSH_QUADS[Math.max(0,this.zone)],a=BRUSH_ANCHORS[q.row][Math.max(0,this.surface)];
+        ax=q.cx;ay=a.y;rot=a.rot;
+      }
+      const th=this.elapsed/1000*2*Math.PI*1.1;
+      brush.setAttribute('transform',`translate(${ax+8*Math.cos(th)},${ay+6*Math.sin(th)}) rotate(${rot})`);
+    },
+    spawnSparkle(){
+      if(this.zone<0)return;
+      const q=BRUSH_QUADS[this.zone];
+      const x=q.cx+(Math.random()-.5)*110,y=(q.row==='upper'?84:216)+(Math.random()-.5)*30;
+      const t=document.createElementNS(SVGNS,'text');
+      t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('font-size',18);
+      t.setAttribute('class','brush-sparkle');t.textContent='✦';t.setAttribute('fill','#FFD54F');
+      fx.appendChild(t);setTimeout(()=>t.remove(),950);
+    },
+    spawnBubble(){
+      if(this.zone<0)return;
+      const q=BRUSH_QUADS[this.zone];
+      const c=document.createElementNS(SVGNS,'circle');
+      c.setAttribute('cx',q.cx+(Math.random()-.5)*60);
+      c.setAttribute('cy',q.row==='upper'?100:200);
+      c.setAttribute('r',3+Math.random()*4);
+      c.setAttribute('fill','none');c.setAttribute('stroke','#81D4FA');c.setAttribute('stroke-width','1.5');
+      c.setAttribute('class','brush-bubbleF');
+      fx.appendChild(c);setTimeout(()=>c.remove(),1150);
+    },
+    enterZone(z){
+      const T=BRUSH_STRINGS.he;
+      if(this.zone>=0){
+        $(BRUSH_QUADS[this.zone].glow).classList.remove('active');
+        $('bDot'+this.zone).classList.remove('active');$('bDot'+this.zone).classList.add('done');
+        $('bTeeth'+BRUSH_QUADS[this.zone].key).classList.remove('dirty');
+        ov.querySelectorAll(`[data-bug^="${BRUSH_QUADS[this.zone].key}"]`).forEach(b=>b.classList.add('swept'));
+        brushSfx.chime();
+      }
+      this.zone=z;this.surface=-1;
+      $(BRUSH_QUADS[z].glow).classList.add('active');
+      $('bDot'+z).classList.add('active');
+      this.setBubble(T.zones[z]);
+      if(z>0)brushSpeak(T.zones[z]); // zone 0 is announced by start() after "מתחילים!"
+    },
+    tick(){
+      if(this.state==='running'){
+        const now=performance.now();
+        this.elapsed+=now-this.last;this.last=now;
+      }
+      if(this.state!=='running')return;
+      const T=BRUSH_STRINGS.he;
+      if(this.elapsed>=120000){this.finish();return}
+      const z=Math.min(3,Math.floor(this.elapsed/30000));
+      const inZone=this.elapsed-z*30000;
+      if(z!==this.zone)this.enterZone(z);
+      const srf=Math.min(2,Math.floor(inZone/10000));
+      if(srf!==this.surface){
+        this.surface=srf;
+        if(inZone>2500)this.setBubble('🪥 '+T.surfaces[srf]);
+      }
+      if(!this.cheered[z]&&inZone>=15000){
+        this.cheered[z]=true;
+        const ch=T.cheers[z%T.cheers.length];
+        this.setBubble(ch);brushSpeak(ch);
+      }
+      [0,1].forEach(j=>{
+        const id=BRUSH_QUADS[z].key+j;
+        if(!this.swept[id]&&inZone>=9000+j*9000){
+          this.swept[id]=true;
+          const b=ov.querySelector(`[data-bug="${id}"]`);
+          if(b)b.classList.add('swept');
+          brushSfx.pop();
+        }
+      });
+      if(!this.tongueDone&&this.elapsed>=116000){
+        this.tongueDone=true;
+        $('bTongue').classList.add('flourish');
+        this.setBubble(T.tongue);brushSpeak(T.tongue);
+      }
+      if(!this._spk||this.elapsed-this._spk>2500){this._spk=this.elapsed;this.spawnSparkle()}
+      if(!this._bub||this.elapsed-this._bub>800){this._bub=this.elapsed;this.spawnBubble()}
+      clock.textContent=this.fmt();
+      const RING_R=52,RING_C=2*Math.PI*RING_R,SEG=RING_C/4-8;
+      [0,1,2,3].forEach(i=>{
+        const p=Math.max(0,Math.min(1,(this.elapsed-i*30000)/30000));
+        $('bSeg'+i).setAttribute('stroke-dasharray',`${p*SEG} ${RING_C}`);
+        if(p>=1)$('bSeg'+i).setAttribute('stroke','#69F0AE');
+      });
+      this.moveBrush();
+    },
+    start(){
+      brushSfx.ensure();
+      $('bIdle').hidden=true;
+      this.state='running';this.last=performance.now();
+      playBtn.textContent='⏸';
+      brushSpeak(BRUSH_STRINGS.he.start);
+      setTimeout(()=>{if(this.state==='running'&&this.zone===0)brushSpeak(BRUSH_STRINGS.he.zones[0])},1300);
+    },
+    pause(){
+      this.state='paused';playBtn.textContent='▶';
+      try{speechSynthesis.cancel()}catch(e){}
+    },
+    resume(){
+      brushSfx.ensure();
+      this.state='running';this.last=performance.now();playBtn.textContent='⏸';
+    },
+    restart(){
+      this.elapsed=0;this.zone=-1;this.surface=-1;this.tongueDone=false;
+      this.cheered=[false,false,false,false];this.swept={};this._spk=0;this._bub=0;
+      [0,1,2,3].forEach(i=>{
+        const d=$('bDot'+i);d.classList.remove('active','done');
+        const s=$('bSeg'+i);s.setAttribute('stroke-dasharray','0 999');s.setAttribute('stroke','#4FC3F7');
+        $(BRUSH_QUADS[i].glow).classList.remove('active');
+        $('bTeeth'+BRUSH_QUADS[i].key).classList.add('dirty');
+      });
+      ov.querySelectorAll('.brush-bug').forEach(b=>b.classList.remove('swept'));
+      $('bTongue').classList.remove('flourish');
+      $('bDone').hidden=true;
+      clock.textContent='2:00';
+      if(this.state==='idle'){$('bIdle').hidden=false}
+      else{this.state='running';this.last=performance.now();playBtn.textContent='⏸'}
+    },
+    finish(){
+      const T=BRUSH_STRINGS.he;
+      this.state='complete';playBtn.textContent='▶';
+      if(this.zone>=0){
+        $(BRUSH_QUADS[this.zone].glow).classList.remove('active');
+        $('bDot'+this.zone).classList.remove('active');$('bDot'+this.zone).classList.add('done');
+        $('bTeeth'+BRUSH_QUADS[this.zone].key).classList.remove('dirty');
+      }
+      clock.textContent='0:00';
+      document.getElementById('bMascotSmile').setAttribute('d','M29 36 Q40 48 51 36');
+      document.getElementById('bMascotSpark').setAttribute('visibility','visible');
+      brushSfx.jingle();brushSpeak(T.done);
+      showConfetti(true);
+      const st=awardBrushSticker(this.kid);
+      $('bStickerBig').textContent=st.icon;
+      $('bStickerNote').textContent=T.stickerEarned+' '+st.icon;
+      this.setBubble(T.done);
+      $('bDone').hidden=false;
+    },
+    close(){
+      clearInterval(this.timer);
+      try{speechSynthesis.cancel()}catch(e){}
+      if(brushSfx.ctx){try{brushSfx.ctx.close()}catch(e){}brushSfx.ctx=null}
+      ov.remove();
+      if(brushGuide===this)brushGuide=null;
+      if(window.__brushGuide===this)window.__brushGuide=null;
+    },
+  };
+
+  ov.querySelector('[data-bx]').addEventListener('click',()=>ctl.close());
+  ov.addEventListener('click',e=>{if(e.target===ov)ctl.close()});
+  ov.querySelector('[data-bstart]').addEventListener('click',()=>ctl.start());
+  playBtn.addEventListener('click',()=>{
+    if(ctl.state==='running')ctl.pause();
+    else if(ctl.state==='paused')ctl.resume();
+    else if(ctl.state==='idle')ctl.start();
+    else if(ctl.state==='complete')ctl.restart();
+  });
+  ov.querySelector('[data-brestart]').addEventListener('click',()=>ctl.restart());
+  ov.querySelector('[data-bmute]').addEventListener('click',e=>{
+    S.brushMuted=!S.brushMuted;save();
+    e.currentTarget.textContent=S.brushMuted?'🔇':'🔊';
+    if(S.brushMuted){try{speechSynthesis.cancel()}catch(err){}}
+  });
+  const markBtn=ov.querySelector('[data-bmark]');
+  if(markBtn)markBtn.addEventListener('click',()=>{
+    ctl.close();
+    setTimeout(()=>{
+      const tid=isEvening()?'ev_teeth':'teeth';
+      const c=ctx();
+      if(S[kid][c.tk][tid])return;
+      const el=document.querySelector(`[data-col-task="${tid}"][data-kid="${kid}"]`)
+        ||(kid===S.currentKid?document.querySelector(`[data-task="${tid}"]`):null);
+      if(el)el.click();
+      else{S[kid][c.tk][tid]=true;save();render()}
+    },60);
+  });
+  ov.querySelector('[data-bclose]').addEventListener('click',()=>ctl.close());
+
+  ctl.moveBrush=ctl.moveBrush.bind(ctl);
+  brush.setAttribute('transform','translate(272,86) rotate(-40)');
+  ctl.timer=setInterval(()=>ctl.tick(),100);
+  brushGuide=ctl;
+  window.__brushGuide=ctl;
+  return ctl;
 }
 
 load();
