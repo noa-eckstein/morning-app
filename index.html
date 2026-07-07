@@ -622,9 +622,9 @@ body{
 .brush-done-btn.primary{background:linear-gradient(135deg,#66BB6A,#A5D6A7);color:#fff}
 .brush-done-btn.secondary{background:#fff;color:#78909C}
 /* scene animation bits */
-.brush-quad{fill:#B9F6CA;opacity:0;rx:14;transition:opacity .4s}
-.brush-quad.active{opacity:.65;animation:brushQuadPulse 1.6s ease-in-out infinite}
-@keyframes brushQuadPulse{0%,100%{opacity:.5}50%{opacity:.8}}
+.brush-quad{fill:none;stroke:#B9F6CA;stroke-width:56;stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .4s}
+.brush-quad.active{opacity:.75;animation:brushQuadPulse 1.6s ease-in-out infinite}
+@keyframes brushQuadPulse{0%,100%{opacity:.55}50%{opacity:.9}}
 .brush-teeth-g rect{transition:fill .8s}
 .brush-teeth-g.dirty rect{fill:#FFF3CD}
 .brush-bug{transition:.2s;animation:brushBugWiggle 1.4s ease-in-out infinite}
@@ -635,7 +635,7 @@ body{
 @keyframes brushSparkle{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1.25)}100%{opacity:0;transform:scale(.6) translateY(-14px)}}
 .brush-bubbleF{animation:brushBubbleF 1.1s ease-out forwards;pointer-events:none}
 @keyframes brushBubbleF{0%{opacity:.9;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-40px) scale(1.5)}}
-.brush-tongue{transition:.5s;transform-origin:200px 218px}
+.brush-tongue{transition:.5s;transform-origin:200px 232px}
 .brush-tongue.flourish{transform:scale(1.5)}
 </style>
 </head>
@@ -2233,7 +2233,7 @@ const BRUSH_STRINGS={he:{
   zones:['עכשיו למעלה מימין!','עכשיו למעלה משמאל!','עכשיו למטה משמאל!','עכשיו למטה מימין!'],
   surfaces:['בחוץ — עיגולים קטנים','בפנים — ליד הלשון','למעלה על השיניים'],
   tongue:'ועכשיו הלשון!',
-  cheers:['מעולה, ממשיכים!','כל הכבוד!','אתם אלופים!','כמעט סיימנו!'],
+  cheers:['מגיעים עד הסוף מאחורה! 🦷','כל הכבוד, ממשיכים!','גם את השיניים האחוריות!','כמעט סיימנו, עד הסוף!'],
   catchBugs:'תפסו את כל חיידקי הסוכר!',
   done:'כל הכבוד! שיניים נקיות! ✨',
   tomorrow:'מצחצחים שוב מחר 🌙',
@@ -2242,18 +2242,33 @@ const BRUSH_STRINGS={he:{
   parentTip:'🫛 משחת שיניים בגודל אפונה · מבוגר עוזר לקטנטנים',
 }};
 
-// zone → quadrant geometry (mirror view: the kid's right = screen right)
+// zone → quadrant (mirror view: the kid's right = screen right)
 const BRUSH_QUADS=[
-  {key:'UR',row:'upper',cx:272,glow:'bqUR'},
-  {key:'UL',row:'upper',cx:128,glow:'bqUL'},
-  {key:'LL',row:'lower',cx:128,glow:'bqLL'},
-  {key:'LR',row:'lower',cx:272,glow:'bqLR'},
+  {key:'UR',row:'upper',glow:'bqUR'},
+  {key:'UL',row:'upper',glow:'bqUL'},
+  {key:'LL',row:'lower',glow:'bqLL'},
+  {key:'LR',row:'lower',glow:'bqLR'},
 ];
-// brush head anchor + rotation per row/surface (0 outer, 1 inner, 2 chewing top)
-const BRUSH_ANCHORS={
-  upper:[{y:86,rot:-40},{y:86,rot:40},{y:118,rot:90}],
-  lower:[{y:214,rot:140},{y:214,rot:220},{y:182,rot:90}],
-};
+// 3D "dentist chart" view: two horseshoe arches seen from the front-above,
+// so the kid sees EVERY tooth — front incisors at the middle of the curve,
+// back molars at the deep ends — and watches the brush travel all the way back.
+let BRUSH_GEO=null;
+function brushArchGeo(){
+  const sample=(cx,cy,rx,ry,a0,a1,n)=>Array.from({length:n},(_,i)=>{
+    const a=(a0+(a1-a0)*i/(n-1))*Math.PI/180;
+    return {x:cx+rx*Math.cos(a),y:cy-ry*Math.sin(a)};
+  });
+  const up={cx:200,cy:118,rx:130,ry:86,teeth:sample(200,118,130,86,175,5,10)};
+  const lo={cx:200,cy:208,rx:118,ry:74,teeth:sample(200,208,118,74,185,355,10)};
+  // per-quadrant tooth lists ordered FRONT → BACK (the sweep direction)
+  const quad={
+    UR:up.teeth.slice(5,10),                 // right of center, incisor→molar
+    UL:up.teeth.slice(0,5).reverse(),
+    LL:lo.teeth.slice(0,5).reverse(),
+    LR:lo.teeth.slice(5,10),
+  };
+  return {up,lo,quad};
+}
 const BRUSH_STICKER_ICONS=['⭐','🦷','✨','🌟','🏅','💎','🪥','😁'];
 
 const brushSfx={
@@ -2279,15 +2294,41 @@ const brushSfx={
   jingle(){[523,659,784,1047].forEach((f,i)=>this.tone(f,.32,'sine',i*.13,.2))},
 };
 
+// Hebrew voice resolution. Note: Android TTS engines report Hebrew with the
+// LEGACY ISO code 'iw' (iw-IL), not 'he' — match both or the voice is missed
+// and the utterance is silently dropped on some engines.
+let brushVoice=null,brushVoiceHooked=false;
+function brushResolveVoice(){
+  try{
+    const vs=speechSynthesis.getVoices();
+    brushVoice=vs.find(v=>/^(he|iw)/i.test(v.lang||''))||null;
+  }catch(e){brushVoice=null}
+  return brushVoice;
+}
 function brushSpeak(text){
   if(S.brushMuted||!('speechSynthesis' in window))return;
   try{
-    speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
-    u.lang='he-IL';u.rate=.9;u.pitch=1.1;
-    const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith('he'));
-    if(v)u.voice=v;
-    speechSynthesis.speak(u);
+    if(!brushVoiceHooked){
+      brushVoiceHooked=true;
+      brushResolveVoice();
+      speechSynthesis.onvoiceschanged=()=>brushResolveVoice();
+    }
+    const doSpeak=()=>{
+      try{
+        if(speechSynthesis.paused)speechSynthesis.resume();
+        const u=new SpeechSynthesisUtterance(text);
+        const v=brushVoice||brushResolveVoice();
+        if(v){u.voice=v;u.lang=v.lang}else{u.lang='he-IL'}
+        u.rate=.9;u.pitch=1.1;
+        speechSynthesis.speak(u);
+      }catch(e){}
+    };
+    // cancel-then-speak in the same tick drops the new utterance on some
+    // Android engines — cancel only if busy, then speak after a short beat.
+    if(speechSynthesis.speaking||speechSynthesis.pending){
+      speechSynthesis.cancel();
+      setTimeout(doSpeak,60);
+    }else doSpeak();
   }catch(e){}
 }
 
@@ -2304,30 +2345,58 @@ function awardBrushSticker(kid){
 }
 
 function brushTeethSvg(){
-  const teethRow=(y,cls)=>Array.from({length:8},(_,i)=>`<rect x="${56+i*36}" y="${y}" width="32" height="52" rx="10" fill="#fff" stroke="#CFD8DC" stroke-width="2"/>`).join('');
-  const bug=(x,y,c,id)=>`<g class="brush-bug" data-bug="${id}" style="transform-box:fill-box;transform-origin:center">
-    <circle cx="${x}" cy="${y}" r="9" fill="${c}" stroke="#fff" stroke-width="1.5"/>
-    <circle cx="${x-3.2}" cy="${y-2.5}" r="2.6" fill="#fff"/><circle cx="${x+3.2}" cy="${y-2.5}" r="2.6" fill="#fff"/>
-    <circle cx="${x-3.2}" cy="${y-2.2}" r="1.2" fill="#37474F"/><circle cx="${x+3.2}" cy="${y-2.2}" r="1.2" fill="#37474F"/>
-    <path d="M${x-2.5} ${y+3} Q${x} ${y+5.5} ${x+2.5} ${y+3}" stroke="#37474F" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-  </g>`;
-  return `<svg id="bMouthSvg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="200" cy="150" rx="178" ry="130" fill="#F8BBD0"/>
-    <ellipse cx="200" cy="150" rx="152" ry="106" fill="#FFEBF0"/>
-    <ellipse id="bTongue" class="brush-tongue" cx="200" cy="218" rx="52" ry="22" fill="#F48FB1"/>
-    <rect id="bqUL" class="brush-quad" x="50" y="48" width="148" height="70"/>
-    <rect id="bqUR" class="brush-quad" x="202" y="48" width="148" height="70"/>
-    <rect id="bqLL" class="brush-quad" x="50" y="182" width="148" height="70"/>
-    <rect id="bqLR" class="brush-quad" x="202" y="182" width="148" height="70"/>
-    <g id="bTeethUL" class="brush-teeth-g dirty">${Array.from({length:4},(_,i)=>`<rect x="${56+i*36}" y="58" width="32" height="52" rx="10" fill="#fff" stroke="#CFD8DC" stroke-width="2"/>`).join('')}</g>
-    <g id="bTeethUR" class="brush-teeth-g dirty">${Array.from({length:4},(_,i)=>`<rect x="${200+i*36}" y="58" width="32" height="52" rx="10" fill="#fff" stroke="#CFD8DC" stroke-width="2"/>`).join('')}</g>
-    <g id="bTeethLL" class="brush-teeth-g dirty">${Array.from({length:4},(_,i)=>`<rect x="${56+i*36}" y="190" width="32" height="52" rx="10" fill="#fff" stroke="#CFD8DC" stroke-width="2"/>`).join('')}</g>
-    <g id="bTeethLR" class="brush-teeth-g dirty">${Array.from({length:4},(_,i)=>`<rect x="${200+i*36}" y="190" width="32" height="52" rx="10" fill="#fff" stroke="#CFD8DC" stroke-width="2"/>`).join('')}</g>
+  BRUSH_GEO=brushArchGeo();
+  const poly=pts=>'M'+pts.map(p=>`${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L');
+  const tooth=(p,i,arch)=>{
+    // i = index from FRONT (0 incisor … 4 back molar); long axis points radially
+    const w=[21,23,26,30,33][i],h=[27,28,30,33,35][i];
+    const dir=Math.atan2(p.y-arch.cy,p.x-arch.cx)*180/Math.PI;
+    const cusps=i>=3?`<circle cx="-5" cy="-4" r="2.2" fill="#E3E8EE"/><circle cx="5" cy="-4" r="2.2" fill="#E3E8EE"/><circle cx="0" cy="5" r="2.2" fill="#E3E8EE"/>`:'';
+    return `<g transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${(dir-90).toFixed(1)})">
+      <rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="9" fill="url(#bToothG)" stroke="#C5CDD6" stroke-width="2"/>${cusps}
+    </g>`;
+  };
+  const quadTeeth=key=>{
+    const arch=(key[0]==='U')?BRUSH_GEO.up:BRUSH_GEO.lo;
+    return `<g id="bTeeth${key}" class="brush-teeth-g dirty">${BRUSH_GEO.quad[key].map((p,i)=>tooth(p,i,arch)).join('')}</g>`;
+  };
+  const bug=(key,slot,c)=>{
+    const p=BRUSH_GEO.quad[key][slot===0?1:4]; // one near the front, one on the BACK molar
+    const x=p.x,y=p.y-2;
+    return `<g class="brush-bug" data-bug="${key}${slot}" style="transform-box:fill-box;transform-origin:center">
+      <circle cx="${x}" cy="${y}" r="8.5" fill="${c}" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="${x-3}" cy="${y-2.3}" r="2.4" fill="#fff"/><circle cx="${x+3}" cy="${y-2.3}" r="2.4" fill="#fff"/>
+      <circle cx="${x-3}" cy="${y-2}" r="1.1" fill="#37474F"/><circle cx="${x+3}" cy="${y-2}" r="1.1" fill="#37474F"/>
+      <path d="M${x-2.3} ${y+2.8} Q${x} ${y+5} ${x+2.3} ${y+2.8}" stroke="#37474F" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+    </g>`;
+  };
+  const glowArc=key=>`<path id="bq${key}" class="brush-quad" d="${poly(BRUSH_GEO.quad[key])}"/>`;
+  const gum=pts=>`<path d="${poly(pts)}" fill="none" stroke="#F0A6C0" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${poly(pts)}" fill="none" stroke="#F8BBD0" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>`;
+  return `<svg id="bMouthSvg" viewBox="0 0 400 330" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="bToothG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E9EDF2"/>
+      </linearGradient>
+      <radialGradient id="bMouthG" cx=".5" cy=".45" r=".75">
+        <stop offset="0" stop-color="#F5A7BE"/><stop offset="1" stop-color="#FCCFDC"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="200" cy="165" rx="186" ry="154" fill="#F8BBD0"/>
+    <ellipse cx="200" cy="165" rx="167" ry="136" fill="#FCE4EC"/>
+    <ellipse cx="200" cy="163" rx="102" ry="54" fill="url(#bMouthG)"/>
+    <circle cx="200" cy="126" r="8" fill="#F48FB1"/>
+    <ellipse id="bTongue" class="brush-tongue" cx="200" cy="232" rx="58" ry="24" fill="#F48FB1"/>
+    <path d="M200 222 Q200 240 200 250" stroke="#EC6F96" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    ${gum(BRUSH_GEO.up.teeth)}
+    ${gum(BRUSH_GEO.lo.teeth)}
+    ${glowArc('UR')}${glowArc('UL')}${glowArc('LL')}${glowArc('LR')}
+    ${quadTeeth('UR')}${quadTeeth('UL')}${quadTeeth('LL')}${quadTeeth('LR')}
     <g id="bBugs">
-      ${bug(234,80,'#AED581','UR0')}${bug(302,92,'#CE93D8','UR1')}
-      ${bug(98,92,'#FFCC80','UL0')}${bug(166,80,'#80DEEA','UL1')}
-      ${bug(80,214,'#CE93D8','LL0')}${bug(160,226,'#AED581','LL1')}
-      ${bug(240,226,'#80DEEA','LR0')}${bug(310,214,'#FFCC80','LR1')}
+      ${bug('UR',0,'#AED581')}${bug('UR',1,'#CE93D8')}
+      ${bug('UL',0,'#FFCC80')}${bug('UL',1,'#80DEEA')}
+      ${bug('LL',0,'#CE93D8')}${bug('LL',1,'#AED581')}
+      ${bug('LR',0,'#80DEEA')}${bug('LR',1,'#FFCC80')}
     </g>
     <g id="bFx"></g>
     <g id="bBrush">
@@ -2415,19 +2484,34 @@ function openBrushGuide(kid){
     setBubble(t){bubble.textContent=t},
     fmt(){const r=Math.max(0,Math.ceil((120000-this.elapsed)/1000));return Math.floor(r/60)+':'+String(r%60).padStart(2,'0')},
     moveBrush(){
-      let ax,ay,rot;
-      if(this.tongueDone&&this.state!=='complete'){ax=200;ay=214;rot=90}
-      else{
-        const q=BRUSH_QUADS[Math.max(0,this.zone)],a=BRUSH_ANCHORS[q.row][Math.max(0,this.surface)];
-        ax=q.cx;ay=a.y;rot=a.rot;
-      }
+      let x,y,rot;
       const th=this.elapsed/1000*2*Math.PI*1.1;
-      brush.setAttribute('transform',`translate(${ax+8*Math.cos(th)},${ay+6*Math.sin(th)}) rotate(${rot})`);
+      if(this.tongueDone&&this.state!=='complete'){
+        x=200+8*Math.cos(th);y=228+5*Math.sin(th);rot=90;
+      }else{
+        const z=Math.max(0,this.zone),q=BRUSH_QUADS[z];
+        const pts=BRUSH_GEO.quad[q.key];
+        const arch=q.row==='upper'?BRUSH_GEO.up:BRUSH_GEO.lo;
+        // each 10s surface pass sweeps the whole quadrant: front → BACK molar → front
+        const inZone=Math.max(0,this.elapsed-z*30000);
+        const pass=(inZone%10000)/10000;
+        const pp=pass<.5?pass*2:2-pass*2;
+        const fi=pp*(pts.length-1),i0=Math.floor(fi),f=fi-i0;
+        const p0=pts[i0],p1=pts[Math.min(i0+1,pts.length-1)];
+        x=p0.x+(p1.x-p0.x)*f;y=p0.y+(p1.y-p0.y)*f;
+        const phi=Math.atan2(y-arch.cy,x-arch.cx);
+        const off=this.surface===0?20:this.surface===1?-20:0; // outer / inner / on top
+        x+=Math.cos(phi)*off;y+=Math.sin(phi)*off;
+        x+=5*Math.cos(th);y+=4*Math.sin(th);
+        rot=phi*180/Math.PI+(this.surface===1?-90:90);
+      }
+      brush.setAttribute('transform',`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${rot.toFixed(1)})`);
     },
     spawnSparkle(){
       if(this.zone<0)return;
-      const q=BRUSH_QUADS[this.zone];
-      const x=q.cx+(Math.random()-.5)*110,y=(q.row==='upper'?84:216)+(Math.random()-.5)*30;
+      const pts=BRUSH_GEO.quad[BRUSH_QUADS[this.zone].key];
+      const p=pts[Math.floor(Math.random()*pts.length)];
+      const x=p.x+(Math.random()-.5)*16,y=p.y+(Math.random()-.5)*16;
       const t=document.createElementNS(SVGNS,'text');
       t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('font-size',18);
       t.setAttribute('class','brush-sparkle');t.textContent='✦';t.setAttribute('fill','#FFD54F');
@@ -2435,10 +2519,11 @@ function openBrushGuide(kid){
     },
     spawnBubble(){
       if(this.zone<0)return;
-      const q=BRUSH_QUADS[this.zone];
+      const pts=BRUSH_GEO.quad[BRUSH_QUADS[this.zone].key];
+      const p=pts[2];
       const c=document.createElementNS(SVGNS,'circle');
-      c.setAttribute('cx',q.cx+(Math.random()-.5)*60);
-      c.setAttribute('cy',q.row==='upper'?100:200);
+      c.setAttribute('cx',p.x+(Math.random()-.5)*36);
+      c.setAttribute('cy',p.y+(Math.random()-.5)*20);
       c.setAttribute('r',3+Math.random()*4);
       c.setAttribute('fill','none');c.setAttribute('stroke','#81D4FA');c.setAttribute('stroke-width','1.5');
       c.setAttribute('class','brush-bubbleF');
@@ -2540,11 +2625,13 @@ function openBrushGuide(kid){
     finish(){
       const T=BRUSH_STRINGS.he;
       this.state='complete';playBtn.textContent='▶';
-      if(this.zone>=0){
-        $(BRUSH_QUADS[this.zone].glow).classList.remove('active');
-        $('bDot'+this.zone).classList.remove('active');$('bDot'+this.zone).classList.add('done');
-        $('bTeeth'+BRUSH_QUADS[this.zone].key).classList.remove('dirty');
-      }
+      // normalize EVERYTHING clean — a device-sleep time jump may have skipped zones
+      BRUSH_QUADS.forEach((q,i)=>{
+        $(q.glow).classList.remove('active');
+        $('bDot'+i).classList.remove('active');$('bDot'+i).classList.add('done');
+        $('bTeeth'+q.key).classList.remove('dirty');
+      });
+      ov.querySelectorAll('.brush-bug').forEach(b=>b.classList.add('swept'));
       clock.textContent='0:00';
       document.getElementById('bMascotSmile').setAttribute('d','M29 36 Q40 48 51 36');
       document.getElementById('bMascotSpark').setAttribute('visibility','visible');
@@ -2597,7 +2684,7 @@ function openBrushGuide(kid){
   ov.querySelector('[data-bclose]').addEventListener('click',()=>ctl.close());
 
   ctl.moveBrush=ctl.moveBrush.bind(ctl);
-  brush.setAttribute('transform','translate(272,86) rotate(-40)');
+  brush.setAttribute('transform','translate(272,32) rotate(40)');
   ctl.timer=setInterval(()=>ctl.tick(),100);
   brushGuide=ctl;
   window.__brushGuide=ctl;

@@ -157,12 +157,16 @@ tooth, big eyes, smile) in a speech bubble cheering the current step in Hebrew
 (`עכשיו למעלה מימין!`, `מעולה, ממשיכים!`, `כמעט סיימנו!`). Bubble text updates on
 each zone/surface change and pulls from the strings table.
 
-**Center (the star) — the mouth.** A big cartoon mouth: soft pink gums, rounded
-white teeth in an upper row and a lower row. The **active quadrant glows** (soft
-mint highlight). A chunky cartoon toothbrush (tiny smiley face, trailing
-bubbles/sparkles) animates over exactly those teeth doing little circles.
-Sparkles pop on teeth as they're "cleaned." Optional **sugar bugs** (§6) sit on
-teeth and get swept away in bubbles as the brush passes.
+**Center (the star) — the mouth.** A **3D "dentist-chart" view**: two horseshoe
+dental arches seen from the front-above (upper ∩ on top, lower ∪ below, with
+uvula + tongue between), so the kid sees EVERY tooth — front incisors at the
+middle of each curve, big back molars at the deep ends. The **active quadrant
+glows** (soft mint arc). The chunky smiley toothbrush **sweeps front → back
+molar → front once per 10s surface pass**, so reaching the back teeth is
+demonstrated, not implied; mid-zone voice cheers reinforce it («מגיעים עד הסוף
+מאחורה!»). Sparkles pop on teeth as they're "cleaned." **Sugar bugs** (§6) sit
+one near the front and one **on the back molar** of each quadrant and get swept
+away as the brush passes.
 
 **Bottom band — timer + controls.** A large circular ring around the `2:00`
 countdown; the ring is **divided into 4 segments** that fill as each zone
@@ -314,12 +318,15 @@ const BRUSH_STRINGS = {
 
 ## 8. Audio (big for pre-readers)
 
-- **Web Speech API** (`speechSynthesis` + `SpeechSynthesisUtterance`), lang
-  **`he-IL`**, warm/gentle rate (~0.9). Speak each zone change from
-  `BRUSH_STRINGS.he.zones[i]`, plus occasional `cheers`. Pick a Hebrew voice from
-  `speechSynthesis.getVoices()` filtered by `lang.startsWith('he')`; fall back to
-  default if none. **Init only after the Play tap** (voices may load async — hook
-  `onvoiceschanged`).
+- **Web Speech API** (`speechSynthesis` + `SpeechSynthesisUtterance`), warm rate
+  (~0.9). Speak each zone change from `BRUSH_STRINGS.he.zones[i]`, plus
+  `cheers`. **Voice lookup must match `/^(he|iw)/`** — Android TTS engines report
+  Hebrew with the legacy ISO code **`iw-IL`**, and matching only `he` silently
+  drops all speech (real bug found on the kids' tablet). Set the utterance's
+  `lang` from the matched voice. Also avoid the cancel-then-speak race: if the
+  engine is speaking/pending, `cancel()` then `speak()` after a ~60ms delay
+  (same-tick speak after cancel is dropped on some Android engines). **Init only
+  after the Play tap** (voices load async — hook `onvoiceschanged`).
 - **Sound cues** via a tiny WebAudio oscillator synth (no files):
   - gentle **chime** on each 30s zone transition,
   - bubbly **pop** when sugar bugs clear,
