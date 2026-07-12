@@ -473,6 +473,14 @@ body{
   box-shadow:0 1px 4px rgba(0,0,0,.08);font-size:13px;color:var(--text2);
   display:flex;justify-content:space-between;align-items:center;cursor:pointer;
 }
+.history-play-btn{
+  border:none;cursor:pointer;font-family:inherit;white-space:nowrap;
+  background:linear-gradient(135deg,var(--legendary1),var(--legendary2));color:#fff;
+  font-size:12px;font-weight:800;padding:6px 13px;border-radius:999px;
+  box-shadow:0 2px 8px rgba(230,81,0,.35);
+}
+.history-play-btn:active{transform:scale(.94)}
+.history-played{font-size:11px;font-weight:800;color:var(--pitch-light);white-space:nowrap}
 
 /* Tablet: side-by-side task columns */
 .dual-tasks{display:flex;gap:12px;padding:0 14px;flex-wrap:wrap}
@@ -850,12 +858,14 @@ function checkResets(){
     if(dow()===0){
       ['yehonatan','yoav'].forEach(k=>{
         if(S[k].team.length>0){
-          S[k].history.unshift({team:[...S[k].team],date:S.weekStart||today});
+          // carry the played status so a MISSED (unplayed) team stays playable
+          // from history, but one already played on Saturday is not replayable
+          S[k].history.unshift({team:[...S[k].team],date:S.weekStart||today,matchPlayed:!!S[k].teamMatch});
           if(S[k].history.length>8)S[k].history.pop();
         }
         S[k].team=[];S[k].teamMatch=false;
         if(S[k].evTeam.length>0){
-          S[k].evHistory.unshift({team:[...S[k].evTeam],date:S.weekStart||today});
+          S[k].evHistory.unshift({team:[...S[k].evTeam],date:S.weekStart||today,matchPlayed:!!S[k].evTeamMatch});
           if(S[k].evHistory.length>8)S[k].evHistory.pop();
         }
         S[k].evTeam=[];S[k].evTeamMatch=false;
@@ -1143,9 +1153,16 @@ function renderTeamForKid(kid){
     S[kid][c.hi].forEach((h,i)=>{
       const players=h.team.map(t=>getPlayerById(t.playerId)).filter(Boolean);
       const names=players.slice(0,3).map(p=>p.name).join(', ');
+      const playable=!h.matchPlayed&&h.team.length>=TEAM_SIZE;
+      const action=playable
+        ? `<button class="history-play-btn" data-play-history="${i}" data-kid="${kid}" data-hi="${c.hi}">⚽ שחק</button>`
+        : (h.matchPlayed?`<span class="history-played">✓ שוחק</span>`:'');
       html+=`<div class="history-item" data-kid="${kid}" data-history="${i}" data-hi="${c.hi}">
         <span>${names}${players.length>3?' ...':''}</span>
-        <span style="font-size:11px;color:var(--text3)">${h.date||''}</span>
+        <span style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:11px;color:var(--text3)">${h.date||''}</span>
+          ${action}
+        </span>
       </div>`;
     });
     html+=`</div>`;
@@ -2034,6 +2051,21 @@ function bindEvents(){
       const h=S[kid]?.[hiKey]?.[idx];
       if(!h)return;
       showHistoryPopup(kid,h,{kid,hiKey,idx});
+    });
+  });
+
+  // Play a previous team's match directly (e.g. missed the Saturday match)
+  document.querySelectorAll('[data-play-history]').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation(); // don't also open the formation popup
+      const kid=btn.dataset.kid;
+      const hiKey=btn.dataset.hi;
+      const idx=parseInt(btn.dataset.playHistory);
+      const h=S[kid]?.[hiKey]?.[idx];
+      if(!h||h.matchPlayed||h.team.length<TEAM_SIZE)return;
+      S.currentKid=kid;
+      save();
+      startMatch({kid,hiKey,idx});
     });
   });
 
